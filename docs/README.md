@@ -7,6 +7,7 @@ Este espacio reune los documentos base, diagramas y decisiones de exploracion pa
 - `../README.md`: nota principal del proyecto y resumen ejecutivo de la idea seleccionada.
 - `../CONTRIBUTING.md`: guia de colaboracion del equipo y flujo de ramas.
 - `../docs/git-workflow.md`: configuracion Git/GitHub recomendada para versionar ADP.
+- `../docs/roadmap.md`: roadmap por fases para organizar el desarrollo del proyecto.
 - `llano/cadenas-productivas-culturales.md`: mapa inicial de cadenas productivas y culturales no petroleras del Llano, con oportunidades para IA y trazabilidad.
 - `llano/propuestas-rubrica.md`: propuestas evaluadas contra la rubrica y recomendacion principal para prototipo.
 - `llano/modelo-negocio-pasaporte-vivo.md`: modelo comercial de la propuesta, con pagadores, compradores, precios y flujos de dinero.

@@ -38,11 +38,27 @@ La primera version debe concentrarse en:
 - comparador IA de pujas;
 - cierre por WhatsApp.
 
+## Roadmap
+
+El desarrollo se organizara por fases:
+
+1. Preparacion del proyecto.
+2. Demo navegable.
+3. MVP tecnico con backend y MySQL.
+4. Pujas anonimas en tiempo real.
+5. Inteligencia artificial comercial.
+6. Cierre por WhatsApp y reputacion.
+7. Piloto con usuarios reales.
+8. Inteligencia comercial, prediccion y escalamiento.
+
+Ver detalle en `docs/roadmap.md`.
+
 ## Documentacion
 
 La guia principal del proyecto esta en:
 
 - `CONTRIBUTING.md`
+- `docs/roadmap.md`
 - `docs/git-workflow.md`
 - `docs/llano/guia-proyecto-plataneros.md`
 - `docs/llano/plataneros-marketplace-pujas.md`
