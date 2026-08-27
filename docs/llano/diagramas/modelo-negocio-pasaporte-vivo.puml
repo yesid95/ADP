@@ -1,0 +1,54 @@
+@startuml
+title Modelo de negocio - Pasaporte Vivo del Llano
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #3D4A3D
+  BackgroundColor #F7F8F3
+}
+skinparam actor {
+  BorderColor #3D4A3D
+}
+
+actor "Institucion ancla\nAlcaldia, Gobernacion,\nCamara, feria" as institucion
+actor "Emprendedor local\nProductor, artesano,\nrestaurante, guia" as emprendedor
+actor "Turista o comprador" as cliente
+
+rectangle "Pasaporte Vivo\ndel Llano" as plataforma
+rectangle "Paquete territorial\no paquete de feria" as paquete
+rectangle "QR + pagina + agente IA\n+ certificado + dashboard" as servicio
+rectangle "Producto o experiencia\nmiel, cacao, artesania,\nhato, gastronomia" as oferta
+rectangle "Compra, reserva o contacto\npor WhatsApp / redes / pago" as venta
+rectangle "Datos de impacto\nvisitas, clics, reservas,\ncertificados" as impacto
+
+institucion --> paquete : paga
+paquete --> plataforma
+plataforma --> servicio : entrega
+servicio --> emprendedor : activa oferta
+emprendedor --> oferta : publica
+cliente --> servicio : escanea QR gratis
+servicio --> venta : convierte interes
+venta --> emprendedor : ingresos directos
+servicio --> impacto : mide
+impacto --> institucion : reporta resultados
+
+emprendedor ..> plataforma : mensualidad futura\no plan pro
+venta ..> plataforma : comision futura\npor reserva confirmada
+
+note right of plataforma
+  Ingreso inicial recomendado:
+  B2B2C. Paga una institucion
+  o feria para activar muchos
+  emprendedores locales.
+end note
+
+note bottom of cliente
+  El usuario final no paga por usar
+  el pasaporte. Paga por productos,
+  experiencias o reservas.
+end note
+
+@enduml

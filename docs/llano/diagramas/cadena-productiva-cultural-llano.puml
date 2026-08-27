@@ -1,0 +1,92 @@
+@startuml
+title Cadena productiva y cultural del Llano - mapa inicial
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #3D4A3D
+  BackgroundColor #F7F8F3
+}
+skinparam package {
+  BorderColor #6B7A59
+  BackgroundColor #FFFFFF
+}
+
+package "Territorio llanero" {
+  rectangle "Sabana, piedemonte,\nrios y hatos" as territorio
+  rectangle "Familias, portadores,\nproductores y gestores" as comunidad
+}
+
+package "Cadenas productivas" {
+  rectangle "Ganaderia\ny lacteos" as ganaderia
+  rectangle "Arroz, palma,\ncacao, cafe, panela" as agro
+  rectangle "Miel, pesca,\nfrutas y despensa local" as alimentos
+  rectangle "Artesanias\ny oficios" as artesanias
+}
+
+package "Cadenas culturales" {
+  rectangle "Joropo,\ncopla y contrapunteo" as joropo
+  rectangle "Cantos de trabajo\nde llano" as cantos
+  rectangle "Coleo, cabalgata\ny faenas hateras" as faenas
+  rectangle "Gastronomia,\nfestivales y memoria" as cultura
+}
+
+package "Experiencias y mercado" {
+  rectangle "Turismo de naturaleza\ny agroturismo" as turismo
+  rectangle "Ferias, restaurantes,\ntiendas y plataformas" as mercado
+  rectangle "Cliente final:\nvisitante, comprador,\naliado o institucion" as cliente
+}
+
+package "Capas tecnologicas" {
+  rectangle "Agente de IA\noperativo y comercial" as ia
+  rectangle "Datos:\nlotes, historias, agenda,\ninventario, audio, ventas" as datos
+  rectangle "Trazabilidad:\norigen, autenticidad,\nsostenibilidad, permisos" as blockchain
+}
+
+territorio --> ganaderia
+territorio --> agro
+territorio --> alimentos
+comunidad --> artesanias
+comunidad --> joropo
+comunidad --> cantos
+comunidad --> faenas
+comunidad --> cultura
+
+ganaderia --> turismo
+agro --> turismo
+alimentos --> mercado
+artesanias --> mercado
+joropo --> turismo
+cantos --> turismo
+faenas --> turismo
+cultura --> mercado
+
+turismo --> cliente
+mercado --> cliente
+
+datos --> ia
+ia --> turismo
+ia --> mercado
+ia --> comunidad
+blockchain --> cliente
+blockchain --> mercado
+blockchain --> turismo
+datos --> blockchain
+
+note right of ia
+  Funciones posibles:
+  reservas, storytelling,
+  inventario, pricing,
+  recomendaciones,
+  traduccion y CRM.
+end note
+
+note bottom of blockchain
+  Usar solo cuando el valor dependa de:
+  origen, autenticidad cultural,
+  sostenibilidad, derechos o confianza.
+end note
+
+@enduml

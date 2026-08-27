@@ -1,0 +1,65 @@
+@startuml
+title Plataneros del Llano - marketplace con pujas anonimas
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #3D4A3D
+  BackgroundColor #F7F8F3
+}
+skinparam database {
+  BorderColor #3D4A3D
+  BackgroundColor #EEF3E8
+}
+
+actor "Finquero\nplatanero" as finquero
+actor "Comprador o\ndistribuidor" as comprador
+actor "IA comercial" as ia
+
+rectangle "Perfil de finca" as perfil
+rectangle "Publicacion de cosecha\ncantidad, fecha, fotos,\nubicacion, acceso vial" as publicacion
+database "Marketplace de\ncosechas disponibles" as marketplace
+rectangle "Buscador inteligente\npor zona, volumen,\nfecha y condiciones" as buscador
+rectangle "Puja anonima\nprecio + transporte + pago\n+ recoleccion + continuidad" as puja
+database "Bandeja de pujas\nanonimas" as bandeja
+rectangle "Comparador de valor total" as comparador
+rectangle "Puja aceptada" as aceptada
+rectangle "Chat / WhatsApp\npara cierre comercial" as cierre
+rectangle "Reputacion e historial" as reputacion
+
+finquero --> perfil : crea
+finquero --> publicacion : publica cosecha
+ia --> publicacion : mejora texto\ny completa datos
+publicacion --> marketplace
+
+comprador --> buscador : pregunta necesidades
+ia --> buscador : recomienda opciones
+buscador --> marketplace
+comprador --> puja : oferta condiciones
+puja --> bandeja
+
+bandeja --> comparador
+ia --> comparador : resume ventajas\ny riesgos
+comparador --> finquero : presenta ranking
+finquero --> aceptada : elige mejor puja
+aceptada --> cierre : revela comprador
+cierre --> reputacion : registra resultado
+reputacion --> perfil
+
+note right of puja
+  La mejor puja no siempre
+  es la de mayor precio:
+  tambien importan transporte,
+  anticipo, pago rapido,
+  compra total y continuidad.
+end note
+
+note bottom of marketplace
+  Modelo inicial:
+  suscripcion economica del finquero
+  o pago por publicacion.
+end note
+
+@enduml

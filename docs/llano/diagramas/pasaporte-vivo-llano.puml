@@ -1,0 +1,57 @@
+@startuml
+title Pasaporte Vivo del Llano - flujo de solucion
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #3D4A3D
+  BackgroundColor #F7F8F3
+}
+skinparam database {
+  BorderColor #3D4A3D
+  BackgroundColor #EEF3E8
+}
+
+actor "Productor,\nartesano o guia" as actor
+actor "Turista o\ncomprador" as cliente
+
+rectangle "Registro de producto\no experiencia" as registro
+database "Ficha viva:\norigen, historia,\nfotos, precio,\ndisponibilidad" as ficha
+rectangle "QR / Pasaporte\ndigital publico" as qr
+rectangle "Agente de IA\ncomercial y cultural" as agente
+rectangle "WhatsApp / redes /\nreserva o compra" as canales
+rectangle "Contenido generado:\npost, guion, ficha,\ncopy de venta" as contenido
+rectangle "Certificado verificable:\norigen, autenticidad,\nsostenibilidad" as certificado
+database "Hash / blockchain\no registro verificable" as chain
+rectangle "Panel de impacto:\nvisitas, consultas,\nreservas, ventas" as panel
+
+actor --> registro
+registro --> ficha
+ficha --> qr
+cliente --> qr
+qr --> agente
+agente --> ficha
+agente --> canales
+agente --> contenido
+ficha --> certificado
+certificado --> chain
+certificado --> cliente
+canales --> panel
+qr --> panel
+agente --> panel
+
+note right of agente
+  Responde solo con datos de la ficha,
+  recomienda productos o rutas
+  y convierte interes en accion.
+end note
+
+note bottom of certificado
+  La certificacion se activa cuando
+  el origen, la autenticidad cultural
+  o la sostenibilidad hacen parte del valor.
+end note
+
+@enduml
