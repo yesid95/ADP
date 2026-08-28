@@ -6,7 +6,7 @@ La propuesta busca resolver un problema simple pero fuerte: el productor no siem
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 terminada; Fase 2 en desarrollo en la rama `codex/fase-2-backend`.
+**Fase actual:** Fase 1 terminada; cierre técnico de Fase 2 completado en la rama `codex/fase-2-backend`.
 
 La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
@@ -37,8 +37,11 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 - CRUD de perfiles, intereses, fincas, publicaciones, fotografías privadas y ofertas con versiones inmutables.
 - Adjudicación única protegida por transacción serializable, bloqueo de filas e idempotencia.
 - Auditoría HMAC encadenada, cuentas MySQL separadas y pruebas negativas de privilegios.
+- Frontend persistente con registro, sesión rotatoria, fincas, publicaciones, ofertas, retiros y adjudicación real.
+- Backup AES-256-GCM, recuperación puntual con binlog y restauración medida en MySQL 8.4 aislado.
+- EXPLAIN ANALYZE de ocho consultas críticas y prueba HTTP concurrente con umbrales verificables.
 
-MySQL 8.4, el CRUD, autenticación/MFA y los privilegios técnicos ya tienen pruebas de integración reales. Antes de considerar terminada la fase faltan el frontend persistente y la recuperación operativa desde respaldos.
+Los siete frentes técnicos de Fase 2 tienen evidencia local reproducible. El despliegue productivo sigue requiriendo infraestructura privada, secretos reales y una prueba con las credenciales del proveedor SMTP elegido; esa validación externa no cambia el cierre del código de la fase.
 
 El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
 
@@ -52,11 +55,11 @@ La rama contiene 26 modelos Prisma, seis migraciones, autenticación/MFA, admini
 |---|---|---|
 | MySQL 8.4 real | Completo | Migraciones, seed, ciclo completo, reinicio frío y CI MySQL 8.4 |
 | API CRUD | Completo | Perfiles, intereses, fincas, publicaciones, fotos privadas, ofertas e historial |
-| Autenticación y administración | Implementado | Falta validar las credenciales del proveedor SMTP del entorno productivo |
+| Autenticación y administración | Completo | SMTP/TLS, recuperación, sesiones, MFA y RBAC probados; repetir smoke con el proveedor productivo |
 | Seguridad efectiva en MySQL | Completo | Cuentas separadas, GRANT negativos, vista anónima, inmutabilidad y cadena HMAC |
-| Integración y concurrencia | Avanzado | MySQL y 100 adjudicaciones concurrentes pasan; faltan privilegios y carga operacional |
-| Frontend persistente | Pendiente | Sustituir datos simulados por autenticación y API real |
-| Operación y recuperación | Pendiente | EXPLAIN, volumen, observabilidad, backup, PITR y restauración medida |
+| Integración y concurrencia | Completo | MySQL, privacidad, idempotencia, permisos, 100 adjudicaciones concurrentes y carga HTTP |
+| Frontend persistente | Completo | Flujo agricultor-comprador real, regresión automática y QA responsive/accesible |
+| Operación y recuperación | Completo | 8 EXPLAIN ANALYZE, métricas, backup cifrado, PITR y restauración medida |
 
 El detalle, orden de ejecución y criterio de salida están en `docs/fase-2-backend.md`. Las fases 3 a 5 —tiempo real, IA real y reputación— no forman parte de esta puerta de cierre.
 
@@ -94,7 +97,7 @@ En otros shells se puede usar `cp` en lugar de `Copy-Item`.
 
 - `backend/.env.docker` define contraseñas independientes para root, aplicación, observación, identidad, mercado, auditoría, migración y backup.
 - `backend/.env` debe usar los mismos valores de aplicación, `MYSQL_AUTH_PASSWORD` y `MYSQL_MARKET_PASSWORD` en sus variables `DATABASE_*`, `AUTH_DATABASE_*` y `MARKET_DATABASE_*`.
-- Las cinco claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes.
+- Las seis claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes, incluida `BACKUP_ENCRYPTION_KEY_BASE64`.
 - Ninguno de estos archivos se versiona.
 
 Para generar cada clave:
@@ -180,7 +183,27 @@ npm test
 npm run build
 npm run backend:validate
 npm --prefix backend run test:integration
+cd backend
+npm run db:plans
+npm run test:load
 ```
+
+La carga local por defecto ejecuta 250 lecturas con concurrencia 25, por debajo del límite global de 300 solicitudes por IP y minuto. Una prueba separada de exceso confirmó respuestas `429`; para medir más volumen se deben simular múltiples IP en un entorno dedicado, no desactivar el control en producción.
+
+### Probar backup y restauración puntual
+
+Definir una clave de backup distinta a las claves de la aplicación y ejecutar desde `backend/`:
+
+```powershell
+$keyBytes = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Fill($keyBytes)
+$env:BACKUP_ENCRYPTION_KEY_BASE64 = [Convert]::ToBase64String($keyBytes)
+npm run db:recovery:drill
+```
+
+El comando crea un dump consistente cifrado con AES-256-GCM, captura el tramo binlog posterior, inicia un MySQL 8.4 efímero sin red, restaura ambos archivos y compara los conteos exactos de todas las tablas, triggers, rutina y vista. Los artefactos locales quedan ignorados en `backend/var/recovery/`. En producción la clave debe vivir en un gestor de secretos separado y el binlog debe copiarse continuamente fuera de la instancia.
+
+La ejecución de cierre obtuvo RPO observado de 0 segundos y RTO de 35,637 segundos frente a objetivos de 15 minutos y 4 horas. El procedimiento y la evidencia están en `docs/fase-2-operacion.md`.
 
 ### Detener el entorno
 
@@ -205,16 +228,17 @@ Si queda vacío, WhatsApp abre el mensaje sin seleccionar destinatario.
 
 La composición local no es una plantilla de producción. Antes de publicar ADP:
 
-1. aprovisionar MySQL 8.4 en red privada, con TLS obligatorio, backups cifrados y recuperación puntual;
+1. aprovisionar MySQL 8.4 en red privada, con TLS obligatorio, binlog continuo y backups cifrados;
 2. guardar credenciales y claves en un gestor de secretos;
 3. configurar SMTP con TLS y verificar desde el proveedor que `SMTP_FROM` esté autorizado;
 4. ejecutar `npm ci`, `npm run db:migrate:deploy`, el hardening `database/security/apply-grants.sh` con una cuenta administrativa y `npm run build` dentro de `backend/`;
 5. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
 6. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
 7. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
-8. ejecutar pruebas de integración, restaurar un backup y verificar readiness antes de dirigir tráfico.
+8. ejecutar `db:plans`, las pruebas de integración y `db:recovery:drill` sobre un clon aislado antes de dirigir tráfico;
+9. configurar alertas sobre readiness, tasa 5xx/429, p95, conexiones, espacio, `Slow_queries`, replicación y antigüedad del último backup.
 
-El backend no debe exponerse a Internet hasta cerrar todos los criterios de seguridad y operación documentados para Fase 2.
+El cierre técnico no autoriza por sí solo exponer el backend: la lista productiva anterior, el smoke SMTP real y la restauración en la infraestructura elegida siguen siendo puertas obligatorias de despliegue.
 
 ## Estructura actual
 
@@ -225,8 +249,10 @@ backend/prisma/          Schema, migraciones y seed
 backend/database/        Inicialización y seguridad local de MySQL
 backend/src/             API y lógica de Fase 2
 backend/tests/           Pruebas unitarias e integración MySQL
+backend/scripts/         Drills de recuperación, EXPLAIN y carga
 docs/fase-1-demo.md      Estado y límites de la Fase 1
 docs/fase-2-backend.md   Estado y puertas de cierre de Fase 2
+docs/fase-2-operacion.md Evidencia y runbook operativo de Fase 2
 ```
 
 ## Concepto
@@ -292,6 +318,7 @@ La guia principal del proyecto esta en:
 - `docs/fase-2-base-de-datos/seguridad-de-la-informacion.md`
 - `docs/fase-2-base-de-datos/plan-de-implementacion.md`
 - `docs/fase-2-backend.md`
+- `docs/fase-2-operacion.md`
 - `backend/README.md`
 - `docs/git-workflow.md`
 - `docs/llano/guia-proyecto-plataneros.md`

@@ -22,6 +22,8 @@ El backend se desarrolla en la rama codex/fase-2-backend. La rama main conserva 
 - idempotencia y auditoría;
 - cuentas MySQL por responsabilidad, vista anónima y auditoría HMAC encadenada;
 - seed territorial inicial para Casanare;
+- frontend persistente para agricultor y comprador, con sesión rotatoria y recuperación;
+- backup cifrado, recuperación puntual, EXPLAIN ANALYZE y carga HTTP;
 - pruebas unitarias, contractuales y HTTP sobre MySQL 8.4.
 
 ## Conexión de componentes
@@ -52,11 +54,12 @@ flowchart LR
 | Transacción de adjudicación | backend/src/modules/bids/bid.service.ts |
 | Seguridad de identidad | backend/src/modules/auth/auth.service.ts |
 | Operación local | backend/README.md |
+| Evidencia operativa | docs/fase-2-operacion.md |
 | Diseño conceptual | docs/fase-2-base-de-datos/README.md |
 
 ## Estado de verificación
 
-La verificación cubre tipos, criptografía, Argon2id, JWT, TOTP con vectores RFC 6238, políticas monetarias, restricciones SQL y superficie HTTP. MySQL 8.4 ejecuta las tres migraciones, seed, CRUD, privacidad, MFA/RBAC y una carrera de 100 solicitudes de adjudicación con un solo ganador; la misma suite corre en CI.
+La verificación cubre tipos, criptografía, Argon2id, JWT, TOTP con vectores RFC 6238, políticas monetarias, restricciones SQL y superficie HTTP. MySQL 8.4 ejecuta las seis migraciones, seed, CRUD, privacidad, MFA/RBAC y una carrera de 100 solicitudes de adjudicación con un solo ganador; la misma suite corre en CI. El frontend completó en navegador el ciclo finca, publicación, oferta anónima y adjudicación. El drill restauró dump y binlog con RPO observado de 0 segundos y RTO de 35,637 segundos.
 
 ## Plan de cierre de los siete frentes
 
@@ -66,11 +69,11 @@ Este documento diferencia código existente de evidencia de cierre. Un frente no
 |---:|---|---|---|
 | 1 | MySQL 8.4 real | Migraciones, seed, reinicio frío, ciclo E2E y CI efímero | Cerrado |
 | 2 | API CRUD | Perfiles, intereses, fincas, publicaciones, fotos, ofertas, historial y paginación | Cerrado |
-| 3 | Autenticación y administración | SMTP, contraseñas, sesiones, roles, TOTP y recuperaciones | Validar credenciales SMTP del proveedor productivo |
+| 3 | Autenticación y administración | SMTP, contraseñas, sesiones, roles, TOTP y recuperaciones | Cerrado técnicamente; repetir smoke con credenciales productivas |
 | 4 | Seguridad MySQL | Cuentas/GRANT, vista anónima, tablas inmutables, cadena `previous_hash` y pruebas negativas | Cerrado |
-| 5 | Integración y concurrencia | Suite MySQL, privacidad, autorización, permisos técnicos, MFA y 100 adjudicaciones concurrentes | Ampliar a prueba de carga operacional |
-| 6 | Frontend persistente | Demo React completa con datos simulados | Cliente API, sesión, estados de red y recorrido comercial persistente |
-| 7 | Operación y recuperación | Health checks y logging con redacción | EXPLAIN, volumen, métricas, backup/PITR, restauración y medición RPO/RTO |
+| 5 | Integración y concurrencia | Suite MySQL, privacidad, autorización, permisos técnicos, MFA, 100 adjudicaciones y carga HTTP | Cerrado |
+| 6 | Frontend persistente | Cliente API, sesión, flujos agricultor/comprador, QA responsive y accesibilidad | Cerrado |
+| 7 | Operación y recuperación | Health/logging, 8 EXPLAIN, métricas, backup AES-GCM, PITR y restauración medida | Cerrado |
 
 ### Orden obligatorio
 
@@ -84,4 +87,6 @@ Este documento diferencia código existente de evidencia de cierre. Un frente no
 
 ### Definición de terminado
 
-Fase 2 termina únicamente cuando un entorno limpio puede migrar y cargar datos, el frontend completa el ciclo comercial con persistencia, solicitudes concurrentes producen una sola adjudicación, los datos privados están aislados por permisos efectivos, MFA protege administración y un respaldo real se restaura dentro de los objetivos documentados.
+El cierre técnico de Fase 2 fue alcanzado en `codex/fase-2-backend`: un entorno limpio puede migrar y cargar datos, el frontend completa el ciclo comercial con persistencia, solicitudes concurrentes producen una sola adjudicación, los datos privados están aislados por permisos efectivos, MFA protege administración y un respaldo real se restaura dentro de los objetivos documentados.
+
+Antes de desplegar se repiten estas pruebas en la infraestructura destino y se valida el proveedor SMTP real. Esas puertas pertenecen al despliegue del entorno y no se sustituyen con la evidencia local.

@@ -4,7 +4,7 @@ Backend TypeScript para persistir usuarios, fincas, cosechas, ofertas versionada
 
 ## Estado
 
-Esta rama contiene la primera base ejecutable de Fase 2:
+Esta rama contiene el cierre técnico ejecutable de Fase 2:
 
 - Express 5 y TypeScript estricto;
 - Prisma 7.9.1, línea soportada para MySQL;
@@ -20,7 +20,9 @@ Esta rama contiene la primera base ejecutable de Fase 2:
 - lectura anónima de ofertas;
 - revelación del contacto únicamente después de adjudicar;
 - clientes separados `adp_auth` y `adp_market`, más cuentas de auditoría, migración, observación y backup;
-- cadena de auditoría HMAC protegida por procedimiento y triggers.
+- cadena de auditoría HMAC protegida por procedimiento y triggers;
+- catálogos territoriales y de cultivo para el frontend persistente;
+- EXPLAIN ANALYZE, carga HTTP, backup cifrado, PITR y restauración aislada medida.
 
 ## Requisitos
 
@@ -86,6 +88,9 @@ http://127.0.0.1:3000
 | npm run db:migrate:dev | Crear/aplicar migraciones de desarrollo |
 | npm run db:migrate:deploy | Aplicar migraciones versionadas |
 | npm run db:seed | Cargar Casanare, municipios y plátano hartón |
+| npm run db:plans | Verificar ocho planes críticos y métricas MySQL |
+| npm run test:load | Carga HTTP local bajo el rate limit por IP |
+| npm run db:recovery:drill | Backup cifrado, binlog y restore aislado |
 | npm run validate | Esquema, tipos, pruebas y build |
 
 ## API inicial
@@ -104,6 +109,7 @@ Prefijo: /api/v1.
 | POST | /auth/login | Público limitado | Abrir sesión |
 | POST | /auth/refresh | Público limitado | Rotar sesión |
 | POST | /auth/logout | Público limitado | Revocar refresh token |
+| GET | /catalogs | Público | Departamentos, municipios y cultivos activos |
 | GET | /me | Autenticado | Leer perfil y contacto propio |
 | POST | /me/password | Autenticado | Cambiar contraseña y revocar sesiones |
 | GET | /me/mfa | Autenticado | Consultar estado MFA |
@@ -179,16 +185,18 @@ backend/
 └── tests/
 ~~~
 
-## Trabajo pendiente para cerrar Fase 2
+## Cierre de Fase 2
 
 1. **MySQL real:** completado con MySQL 8.4, migraciones, seed, ciclo integral y CI efímero.
 2. **API CRUD:** completado para perfiles, intereses, fincas, publicaciones, fotografías e historial propio.
-3. **Autenticación y administración:** implementado; falta verificar el proveedor SMTP definitivo de producción.
+3. **Autenticación y administración:** completado; el despliegue debe repetir un smoke con el proveedor SMTP definitivo.
 4. **Seguridad MySQL:** completada con cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría append-only y versiones sin UPDATE/DELETE.
-5. **Integración y concurrencia:** autorización negativa, privacidad, idempotencia y carrera de adjudicación sobre base real.
-6. **Frontend:** reemplazar estado y datos simulados por sesión y API persistente.
-7. **Operación:** EXPLAIN, pruebas de volumen, observabilidad, backup, recuperación puntual y restauración medida.
+5. **Integración y concurrencia:** completada con autorización negativa, privacidad, idempotencia, 100 adjudicaciones y carga HTTP.
+6. **Frontend:** completado con sesión y API persistente para agricultor y comprador.
+7. **Operación:** completada con ocho EXPLAIN, métricas, backup AES-GCM, recuperación puntual y restauración medida.
 
 Además, la auditoría debe encadenar cada `event_hash` con `previous_hash`, la rotación de claves debe tener procedimiento operativo y cada lectura permitida o denegada de contacto debe quedar registrada.
 
-El servidor no debe publicarse en Internet hasta cerrar esos puntos.
+El detalle operativo, resultados y runbook están en `../docs/fase-2-operacion.md`.
+
+El cierre técnico no autoriza publicar automáticamente el servidor. La infraestructura destino debe repetir migraciones, permisos, integración, restore, alertas y SMTP antes de recibir tráfico.

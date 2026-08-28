@@ -16,7 +16,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 |---|---|---|
 | Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
 | Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
-| Fase 2 | En desarrollo | Núcleo backend implementado; faltan siete frentes de integración, seguridad, frontend y operación para cerrar la fase |
+| Fase 2 | Terminada técnicamente en rama | Backend/MySQL, seguridad, frontend persistente y recuperación verificados; falta desplegar y probar servicios productivos externos |
 
 ## Fase 0 - Preparacion del proyecto
 
@@ -40,7 +40,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 - `docs/llano/stack-tecnologico-seleccionado.md`
 - `docs/roadmap.md`
 
-### Criterio de salida
+### Criterio de salida alcanzado
 
 El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a desarrollar sin depender de explicaciones externas.
 
@@ -126,7 +126,7 @@ La especificación de tablas, relaciones, columnas, tipos, índices, seguridad y
 
 El sistema guarda usuarios, fincas, cosechas y ofertas en MySQL. Un comprador puede ofertar y revisar sus condiciones sin borrar el historial, y un finquero puede aceptar una sola oferta válida aun bajo solicitudes concurrentes. Los contactos permanecen cifrados y ocultos hasta la adjudicación, y el esquema puede restaurarse desde respaldos probados.
 
-El estado verificable de los siete frentes de cierre se mantiene en `docs/fase-2-backend.md`. Mientras MySQL real, CRUD, MFA, permisos, concurrencia, frontend persistente y restauración no estén demostrados, la fase permanece en desarrollo.
+Los siete frentes están demostrados en `docs/fase-2-backend.md`: MySQL real, CRUD, MFA, permisos, concurrencia, frontend persistente y restauración. `docs/fase-2-operacion.md` conserva resultados y runbook. El despliegue productivo debe repetir la evidencia y validar SMTP/TLS con el proveedor elegido.
 
 ## Fase 3 - Pujas anonimas en tiempo real
 
