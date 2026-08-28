@@ -1,0 +1,20 @@
+process.env.NODE_ENV = "test";
+process.env.PORT = "3001";
+process.env.TRUST_PROXY = "false";
+process.env.CORS_ORIGINS = "http://localhost:5173";
+process.env.LOG_LEVEL = "silent";
+process.env.DATABASE_URL = "mysql://test:test@127.0.0.1:3306/adp_test";
+process.env.DATABASE_HOST = "127.0.0.1";
+process.env.DATABASE_PORT = "3306";
+process.env.DATABASE_USER = "test";
+process.env.DATABASE_PASSWORD = "test";
+process.env.DATABASE_NAME = "adp_test";
+process.env.DATABASE_CONNECTION_LIMIT = "2";
+
+const testKey = Buffer.alloc(32, 7).toString("base64");
+process.env.JWT_SECRET_BASE64 = testKey;
+process.env.CONTACT_ENCRYPTION_KEY_BASE64 = testKey;
+process.env.CONTACT_LOOKUP_KEY_BASE64 = testKey;
+process.env.AUDIT_HMAC_KEY_BASE64 = testKey;
+process.env.ACCESS_TOKEN_TTL_MINUTES = "10";
+process.env.REFRESH_TOKEN_TTL_DAYS = "30";
