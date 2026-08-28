@@ -30,15 +30,15 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 ### Avance de Fase 2 en la rama dedicada
 
 - Backend Node.js + Express y TypeScript estricto.
-- Prisma para MySQL 8.4 con 25 modelos, migración inicial, llaves foráneas y restricciones reales.
+- Prisma para MySQL 8.4 con 26 modelos, seis migraciones, llaves foráneas y restricciones reales.
 - Registro, correo SMTP, recuperación/cambio de contraseña, Argon2id, JWT corto y refresh token rotatorio.
 - MFA TOTP con recuperación de un solo uso y administración protegida por rol + MFA.
 - Separación y cifrado autenticado de contactos privados.
 - CRUD de perfiles, intereses, fincas, publicaciones, fotografías privadas y ofertas con versiones inmutables.
 - Adjudicación única protegida por transacción serializable, bloqueo de filas e idempotencia.
-- Auditoría autenticada y pruebas unitarias/contractuales del backend.
+- Auditoría HMAC encadenada, cuentas MySQL separadas y pruebas negativas de privilegios.
 
-MySQL 8.4, el CRUD y autenticación/MFA ya tienen pruebas de integración reales. Antes de considerar terminada la fase faltan los privilegios técnicos separados, el frontend persistente y la recuperación operativa desde respaldos.
+MySQL 8.4, el CRUD, autenticación/MFA y los privilegios técnicos ya tienen pruebas de integración reales. Antes de considerar terminada la fase faltan el frontend persistente y la recuperación operativa desde respaldos.
 
 El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
 
@@ -46,14 +46,14 @@ La implementación ejecutable y su estado están en `backend/README.md` y `docs/
 
 ### Estado verificable de cierre de Fase 2
 
-La rama contiene 25 modelos Prisma, tres migraciones, autenticación/MFA, administración, cifrado de contactos, CRUD comercial, adjudicación transaccional, idempotencia y pruebas sobre MySQL 8.4. Esto todavía no equivale a una Fase 2 terminada.
+La rama contiene 26 modelos Prisma, seis migraciones, autenticación/MFA, administración, cifrado de contactos, CRUD comercial, privilegios efectivos, adjudicación transaccional, idempotencia y pruebas sobre MySQL 8.4. Esto todavía no equivale a una Fase 2 terminada.
 
 | Frente de cierre | Estado actual | Evidencia que falta para cerrarlo |
 |---|---|---|
 | MySQL 8.4 real | Completo | Migraciones, seed, ciclo completo, reinicio frío y CI MySQL 8.4 |
 | API CRUD | Completo | Perfiles, intereses, fincas, publicaciones, fotos privadas, ofertas e historial |
 | Autenticación y administración | Implementado | Falta validar las credenciales del proveedor SMTP del entorno productivo |
-| Seguridad efectiva en MySQL | Parcial | Cuentas separadas, GRANT, vistas, inmutabilidad y auditoría encadenada |
+| Seguridad efectiva en MySQL | Completo | Cuentas separadas, GRANT negativos, vista anónima, inmutabilidad y cadena HMAC |
 | Integración y concurrencia | Avanzado | MySQL y 100 adjudicaciones concurrentes pasan; faltan privilegios y carga operacional |
 | Frontend persistente | Pendiente | Sustituir datos simulados por autenticación y API real |
 | Operación y recuperación | Pendiente | EXPLAIN, volumen, observabilidad, backup, PITR y restauración medida |
@@ -92,8 +92,8 @@ Copy-Item backend/.env.docker.example backend/.env.docker
 
 En otros shells se puede usar `cp` en lugar de `Copy-Item`.
 
-- `backend/.env.docker` define las contraseñas locales de root, aplicación y observación.
-- `backend/.env` debe usar el mismo `MYSQL_PASSWORD` en `DATABASE_URL` y `DATABASE_PASSWORD`.
+- `backend/.env.docker` define contraseñas independientes para root, aplicación, observación, identidad, mercado, auditoría, migración y backup.
+- `backend/.env` debe usar los mismos valores de aplicación, `MYSQL_AUTH_PASSWORD` y `MYSQL_MARKET_PASSWORD` en sus variables `DATABASE_*`, `AUTH_DATABASE_*` y `MARKET_DATABASE_*`.
 - Las cinco claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes.
 - Ninguno de estos archivos se versiona.
 
@@ -120,10 +120,11 @@ El estado de `adp-mysql` debe aparecer como `healthy`. MySQL solo se publica en 
 ```bash
 npm run db:migrate:deploy
 npm run db:seed
+docker compose --env-file .env.docker exec mysql sh /opt/adp/security/apply-grants.sh
 npm run test:integration
 ```
 
-La migración crea las tablas, relaciones y restricciones. El seed carga Casanare, sus 19 municipios y la variedad `PLATANO_HARTON`.
+Las migraciones crean tablas, relaciones, restricciones y la vista anónima. El seed carga Casanare, sus 19 municipios y `PLATANO_HARTON`. El paso `apply-grants.sh` crea o rota las cuentas técnicas, aplica privilegios mínimos e instala el procedimiento y los triggers de auditoría; debe ejecutarse después de cada migración que agregue tablas o vistas.
 
 ### 5. Ejecutar API y frontend
 
@@ -207,7 +208,7 @@ La composición local no es una plantilla de producción. Antes de publicar ADP:
 1. aprovisionar MySQL 8.4 en red privada, con TLS obligatorio, backups cifrados y recuperación puntual;
 2. guardar credenciales y claves en un gestor de secretos;
 3. configurar SMTP con TLS y verificar desde el proveedor que `SMTP_FROM` esté autorizado;
-4. ejecutar `npm ci`, `npm run db:migrate:deploy` y `npm run build` dentro de `backend/`;
+4. ejecutar `npm ci`, `npm run db:migrate:deploy`, el hardening `database/security/apply-grants.sh` con una cuenta administrativa y `npm run build` dentro de `backend/`;
 5. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
 6. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
 7. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;

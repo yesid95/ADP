@@ -8,8 +8,8 @@ Esta rama contiene la primera base ejecutable de Fase 2:
 
 - Express 5 y TypeScript estricto;
 - Prisma 7.9.1, línea soportada para MySQL;
-- 25 modelos relacionales;
-- migración inicial con FKs, índices, ENUM y CHECK;
+- 26 modelos relacionales y seis migraciones;
+- FKs, índices, ENUM, CHECK y vista anónima;
 - registro, correo SMTP, recuperación/cambio de contraseña, login, refresh rotatorio y logout;
 - MFA TOTP cifrado, códigos de recuperación de un solo uso y administración RBAC;
 - Argon2id, AES-256-GCM, hashes ciegos y auditoría HMAC;
@@ -18,7 +18,9 @@ Esta rama contiene la primera base ejecutable de Fase 2:
 - idempotencia;
 - adjudicación única bajo transacción serializable y bloqueo de filas;
 - lectura anónima de ofertas;
-- revelación del contacto únicamente después de adjudicar.
+- revelación del contacto únicamente después de adjudicar;
+- clientes separados `adp_auth` y `adp_market`, más cuentas de auditoría, migración, observación y backup;
+- cadena de auditoría HMAC protegida por procedimiento y triggers.
 
 ## Requisitos
 
@@ -46,13 +48,13 @@ En desarrollo se admite `MAIL_MODE=token`. En producción el esquema de entorno 
 
 ## MySQL local con Docker
 
-Copiar .env.docker.example como .env.docker, definir las contraseñas de root, aplicación y observación, y ejecutar desde backend:
+Copiar .env.docker.example como .env.docker, definir las contraseñas independientes indicadas y ejecutar desde backend:
 
 ~~~bash
 docker compose --env-file .env.docker up -d
 ~~~
 
-La base solo se publica en 127.0.0.1. Esta composición es para desarrollo; producción debe usar red privada, TLS, backups cifrados y cuentas de menor privilegio.
+La base solo se publica en 127.0.0.1. Después se ejecutan las migraciones y `apply-grants.sh`, en ese orden, como muestra la sección siguiente. Esta composición es para desarrollo; producción debe usar red privada, TLS y backups cifrados.
 
 ## Instalación
 
@@ -61,6 +63,7 @@ npm install
 npm run prisma:validate
 npm run db:migrate:deploy
 npm run db:seed
+docker compose --env-file .env.docker exec mysql sh /opt/adp/security/apply-grants.sh
 npm run dev
 ~~~
 
@@ -181,7 +184,7 @@ backend/
 1. **MySQL real:** completado con MySQL 8.4, migraciones, seed, ciclo integral y CI efímero.
 2. **API CRUD:** completado para perfiles, intereses, fincas, publicaciones, fotografías e historial propio.
 3. **Autenticación y administración:** implementado; falta verificar el proveedor SMTP definitivo de producción.
-4. **Seguridad MySQL:** cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría INSERT-only y versiones sin UPDATE/DELETE.
+4. **Seguridad MySQL:** completada con cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría append-only y versiones sin UPDATE/DELETE.
 5. **Integración y concurrencia:** autorización negativa, privacidad, idempotencia y carrera de adjudicación sobre base real.
 6. **Frontend:** reemplazar estado y datos simulados por sesión y API persistente.
 7. **Operación:** EXPLAIN, pruebas de volumen, observabilidad, backup, recuperación puntual y restauración medida.

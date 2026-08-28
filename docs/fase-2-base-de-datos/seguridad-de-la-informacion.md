@@ -196,9 +196,9 @@ flowchart TB
 | Cuenta | Permitido | Prohibido |
 |---|---|---|
 | adp_migrator | DDL en despliegue | Uso por el servidor en ejecución |
-| adp_auth | DML de identidad y sesiones | Tablas de mercado no necesarias, DDL |
+| adp_auth | DML de identidad, sesiones, MFA y perfil propio | Tablas de operación comercial, DDL |
 | adp_market | DML del mercado y SELECT público de users | Contactos, contraseñas, sesiones, MFA, DDL |
-| adp_audit_writer | INSERT en audit_events | SELECT masivo, UPDATE, DELETE, TRUNCATE |
+| adp_audit_writer | INSERT en audit_events y EXECUTE del bloqueo de cabeza | SELECT masivo, UPDATE, DELETE, TRUNCATE |
 | adp_auditor | SELECT de auditoría | Escritura |
 | adp_backup | Operaciones mínimas de respaldo | Login interactivo normal |
 
@@ -258,6 +258,8 @@ Las recomendaciones generales de menor privilegio, protección de archivos, TLS 
 - Saltos de línea y caracteres de control se sanitizan.
 - El request_id relaciona eventos sin copiar la solicitud.
 - previous_hash y event_hash permiten detectar alteración.
+- Un trigger rechaza eventos cuyo previous_hash no coincide con la cabeza; otro avanza la cabeza después del INSERT.
+- Las cuentas de aplicación solo ejecutan el procedimiento de bloqueo y no actualizan directamente la cabeza.
 - Se exporta una copia hacia almacenamiento inmutable cuando exista infraestructura.
 - Retención operativa inicial: 365 días para eventos de seguridad, sujeta a revisión legal y de privacidad.
 

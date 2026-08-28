@@ -506,6 +506,23 @@ Registro técnico append-only. No contiene cuerpos completos de solicitudes.
 
 La cuenta adp_audit_writer recibe INSERT y no recibe UPDATE, DELETE ni TRUNCATE.
 
+### audit_chain_heads
+
+Cabeza singleton usada para serializar y verificar la cadena de auditoría.
+
+| Columna | Tipo | Nulo | Clave / regla |
+|---|---|---:|---|
+| id | TINYINT UNSIGNED | No | PK, CHECK id = 1 |
+| current_hash | BINARY(32) | Sí | Hash del último evento |
+| last_event_id | BIGINT UNSIGNED | Sí | ID del último evento |
+| updated_at | DATETIME(3) | No | UTC |
+
+Las cuentas de aplicación reciben únicamente `EXECUTE` sobre `lock_audit_chain_head`; los triggers, con definidor administrativo, validan y avanzan esta fila.
+
+### v_anonymous_bid_latest
+
+Vista de la versión vigente de cada oferta. Expone `bid_id`, `listing_id`, etiqueta anónima y condiciones económicas/logísticas, pero excluye `buyer_user_id`, nombre, empresa, correo y teléfono.
+
 ## Datos derivados que no se almacenan
 
 | Dato | Fórmula o fuente |

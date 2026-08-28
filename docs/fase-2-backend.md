@@ -9,8 +9,8 @@ El backend se desarrolla en la rama codex/fase-2-backend. La rama main conserva 
 - paquete independiente en backend/;
 - Express 5 + TypeScript;
 - Prisma 7 compatible con MySQL 8.4;
-- schema.prisma con los 25 modelos documentados;
-- tres migraciones SQL versionadas;
+- schema.prisma con 26 modelos;
+- seis migraciones SQL versionadas;
 - restricciones por fila y relaciones compuestas;
 - autenticación, correo SMTP, recuperación, sesiones rotatorias y MFA TOTP;
 - administración de usuarios protegida por rol y MFA;
@@ -20,6 +20,7 @@ El backend se desarrolla en la rama codex/fase-2-backend. La rama main conserva 
 - lectura anónima;
 - adjudicación única;
 - idempotencia y auditoría;
+- cuentas MySQL por responsabilidad, vista anónima y auditoría HMAC encadenada;
 - seed territorial inicial para Casanare;
 - pruebas unitarias, contractuales y HTTP sobre MySQL 8.4.
 
@@ -66,8 +67,8 @@ Este documento diferencia código existente de evidencia de cierre. Un frente no
 | 1 | MySQL 8.4 real | Migraciones, seed, reinicio frío, ciclo E2E y CI efímero | Cerrado |
 | 2 | API CRUD | Perfiles, intereses, fincas, publicaciones, fotos, ofertas, historial y paginación | Cerrado |
 | 3 | Autenticación y administración | SMTP, contraseñas, sesiones, roles, TOTP y recuperaciones | Validar credenciales SMTP del proveedor productivo |
-| 4 | Seguridad MySQL | Cifrado de PII, hashes ciegos, CHECK, FK y HMAC de eventos | Cuentas/GRANT, vista anónima, tablas inmutables y cadena `previous_hash` |
-| 5 | Integración y concurrencia | Suite MySQL, privacidad, autorización, MFA y 100 adjudicaciones concurrentes | Ampliar a permisos técnicos y prueba de carga operacional |
+| 4 | Seguridad MySQL | Cuentas/GRANT, vista anónima, tablas inmutables, cadena `previous_hash` y pruebas negativas | Cerrado |
+| 5 | Integración y concurrencia | Suite MySQL, privacidad, autorización, permisos técnicos, MFA y 100 adjudicaciones concurrentes | Ampliar a prueba de carga operacional |
 | 6 | Frontend persistente | Demo React completa con datos simulados | Cliente API, sesión, estados de red y recorrido comercial persistente |
 | 7 | Operación y recuperación | Health checks y logging con redacción | EXPLAIN, volumen, métricas, backup/PITR, restauración y medición RPO/RTO |
 
