@@ -6,7 +6,7 @@ La propuesta busca resolver un problema simple pero fuerte: el productor no siem
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 - Demo navegable terminada.
+**Fase actual:** Fase 1 terminada; arquitectura de datos y seguridad de Fase 2 documentada.
 
 La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
@@ -30,12 +30,15 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 ### Pendiente para Fase 2
 
 - Backend Node.js + Express.
-- Base de datos MySQL.
-- Prisma.
-- Autenticacion.
-- Pujas reales persistidas.
-- Socket.IO para tiempo real.
-- Integracion real del servicio IA.
+- Base de datos MySQL 8.4 con InnoDB.
+- Prisma con migraciones y llaves foráneas reales.
+- Autenticación con Argon2id, sesiones rotatorias y MFA administrativo.
+- Separación y cifrado de contactos privados.
+- Perfiles, fincas, publicaciones y ofertas versionadas persistidas.
+- Adjudicación única protegida por transacción y restricciones.
+- Auditoría, permisos mínimos y restauración de respaldos.
+
+El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
 
 ## Ejecutar el proyecto
 
@@ -170,6 +173,12 @@ La guia principal del proyecto esta en:
 - `CONTRIBUTING.md`
 - `docs/roadmap.md`
 - `docs/fase-1-demo.md`
+- `docs/fase-2-base-de-datos/README.md`
+- `docs/fase-2-base-de-datos/modelo-relacional.md`
+- `docs/fase-2-base-de-datos/diccionario-de-datos.md`
+- `docs/fase-2-base-de-datos/logica-e-integridad.md`
+- `docs/fase-2-base-de-datos/seguridad-de-la-informacion.md`
+- `docs/fase-2-base-de-datos/plan-de-implementacion.md`
 - `docs/git-workflow.md`
 - `docs/llano/guia-proyecto-plataneros.md`
 - `docs/llano/plataneros-marketplace-pujas.md`

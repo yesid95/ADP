@@ -293,31 +293,41 @@ Para este proyecto, recomiendo:
 2. **Usar Auktiva o auction-website como referencia tecnica para pujas anonimas y tiempo real.**
 3. **Construir el dominio agricola propio:** finca, cosecha, comprador, puja compuesta, comparador.
 4. **Usar Dify o un servicio IA propio para el chatbot.**
-5. **Dejar prediccion de precios como fase 2**, porque sin datos historicos locales se vuelve especulativa.
+5. **Dejar predicción de precios para la Fase 7**, porque sin datos históricos locales se vuelve especulativa.
+
+La especificación vigente de base de datos y seguridad se encuentra en `../fase-2-base-de-datos/README.md`. Las alternativas descritas antes de esta sección se conservan como investigación, no como decisión arquitectónica actual.
 
 ## MVP tecnico concreto
 
 ### Entidades minimas
 
 - User
+- UserPrivateContact
+- PasswordCredential
+- UserRole
 - FarmerProfile
 - BuyerProfile
-- CropListing
+- Farm
+- HarvestListing
+- HarvestPhoto
 - Bid
-- BidComparison
-- MessageOrContactRequest
+- BidVersion
+- ListingAward
+- IdempotencyRecord
+- AuditEvent
 
 ### Campos clave de puja
 
-- price_total;
-- includes_transport;
+- unit_price_cop_per_kg;
+- offered_quantity_kg;
+- transport_included;
 - pickup_at_farm;
-- advance_payment_percent;
-- payment_days;
-- buys_full_lot;
-- recurring_offer;
-- notes;
-- buyer_id oculto hasta aceptacion;
+- seller_logistics_cost_cop;
+- advance_amount_cop;
+- payment_term_days;
+- continuity_months;
+- observations;
+- buyer_user_id oculto hasta adjudicación;
 - status.
 
 ### Scoring inicial sin ML
@@ -354,21 +364,37 @@ paga anticipo y compra todo el lote. Esto reduce costos y riesgo para el product
 ### Fase 2: MVP real
 
 - Login.
-- Base de datos real.
-- Fotos de cosecha.
+- Base de datos MySQL y migraciones Prisma.
+- Contactos cifrados, sesiones rotatorias y roles.
+- Fincas, publicaciones, fotos y ofertas persistidas.
+- Ofertas versionadas y adjudicación única transaccional.
+- Auditoría, permisos mínimos y restauración de backups.
+
+### Fase 3: Pujas en tiempo real
+
 - Pujas en tiempo real.
+- Actualización por Socket.IO.
+- Eventos de cierre, aceptación y revelación.
+
+### Fase 4: Inteligencia artificial comercial
+
 - Chat IA para crear publicaciones.
 - Busqueda para compradores.
+- Comparación explicada de ofertas.
 
-### Fase 3: Inteligencia comercial
+### Fase 5: Cierre y reputación
+
+- Reputacion.
+- Historial de cierres por WhatsApp.
+
+### Fase 7: Inteligencia comercial
 
 - Historial de precios.
 - Scoring por municipio/ruta.
 - Alertas para compradores.
-- Reputacion.
-- Prediccion de precio si hay suficientes datos.
+- Predicción de precio si hay suficientes datos.
 
-### Fase 4: Plataforma expandible
+### Fase 8: Plataforma expandible
 
 - Otros cultivos.
 - Asociaciones.

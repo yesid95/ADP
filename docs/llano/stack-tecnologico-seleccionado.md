@@ -10,8 +10,8 @@ Backend: Node.js + Express
 Base de datos: MySQL
 ORM: Prisma
 Tiempo real: Socket.IO
-Autenticacion: JWT + bcrypt
-Imagenes: Cloudinary o almacenamiento local para demo
+Autenticacion: JWT corto + refresh rotatorio + Argon2id
+Imagenes: almacenamiento de objetos privado; local solo para demo
 IA: servicio externo consumido desde el backend
 Cierre comercial: enlaces de WhatsApp wa.me
 ```
@@ -34,8 +34,8 @@ React permite construir una interfaz clara y mobile-first. Node.js funciona bien
 | Datos relacionales | MySQL | Ideal para usuarios, publicaciones, pujas y estados transaccionales |
 | Acceso ordenado a la base de datos | Prisma | Facilita modelos, consultas, migraciones y mantenimiento |
 | Pujas en tiempo real | Socket.IO | Permite que el finquero vea pujas sin refrescar la pantalla |
-| Seguridad basica | JWT + bcrypt | Manejo de sesiones y contrasenas cifradas |
-| Fotos de cosechas | Cloudinary o local en demo | Permite mostrar evidencia visual del cultivo |
+| Seguridad de identidad | JWT corto + refresh rotatorio + Argon2id | Sesiones revocables y contraseñas con hash resistente |
+| Fotos de cosechas | Almacenamiento de objetos privado | Conserva evidencia sin exponer archivos permanentemente |
 | Asistente inteligente | API IA desde backend | Centraliza prompts, reglas y control de datos |
 | Cierre comercial | WhatsApp `wa.me` | Evita integrar pagos o mensajeria compleja desde el MVP |
 
@@ -82,7 +82,7 @@ Pujador C
 
 Pero no debe revelar nombre, telefono o empresa hasta que el finquero acepte una puja.
 
-En base de datos si se guarda el comprador real mediante `buyer_id`, pero la API debe ocultarlo mientras la publicacion este abierta.
+En base de datos se guarda el comprador real mediante `buyer_id`, pero las consultas del finquero no exponen ese identificador ni los datos privados mientras la publicación esté abierta. Correo y teléfono viven cifrados en una tabla separada, y la cuenta del módulo de mercado no puede leerla. La identidad solo se revela después de crear una adjudicación válida.
 
 ### 4. IA como modulo separado
 
@@ -140,6 +140,8 @@ Cada rol debe ver pantallas distintas.
 El finquero publica y acepta pujas.  
 El comprador busca y oferta.  
 El administrador modera usuarios, publicaciones y reportes.
+
+Las contraseñas usan Argon2id. Los tokens de renovación se guardan únicamente como hash, se rotan en cada uso y pueden revocarse. Los administradores requieren MFA.
 
 ### 8. Historial y reputacion
 
@@ -209,8 +211,8 @@ Las referencias open source se usaran como inspiracion tecnica y funcional, espe
 | Cierre por WhatsApp | Alta |
 | Reputacion | Media |
 | Pagos integrados | Baja para MVP |
-| Prediccion de precios | Fase 2 |
-| Blockchain/trazabilidad | Opcional o fase 3 |
+| Prediccion de precios | Fase 7 |
+| Blockchain/trazabilidad | Opcional después del MVP |
 
 ## Arquitectura inicial
 
@@ -244,17 +246,26 @@ Backend
 WhatsApp wa.me
 ```
 
+La especificación vigente de conexiones, cuentas técnicas, tablas, restricciones y transacciones está en `../fase-2-base-de-datos/README.md`.
+
 ## Entidades iniciales
 
 ```text
 User
+UserPrivateContact
+PasswordCredential
+UserRole
 FarmerProfile
 BuyerProfile
-CropListing
+Farm
+CropVariety
+HarvestListing
+HarvestPhoto
 Bid
-BidComparison
-ContactRequest
-Review
+BidVersion
+ListingAward
+IdempotencyRecord
+AuditEvent
 ```
 
 ## Decision sobre prediccion
@@ -268,7 +279,7 @@ En la primera version usaremos:
 - comparacion asistida por IA;
 - explicacion de valor neto.
 
-La prediccion puede entrar despues como fase 2 cuando tengamos datos suficientes.
+La predicción puede entrar en la Fase 7 cuando existan datos propios suficientes y verificables.
 
 ## Decision sobre blockchain
 
@@ -284,7 +295,7 @@ Para la actividad, basta mencionar que la arquitectura puede dejar un registro a
 
 ## Resumen para presentar
 
-Vamos a desarrollar **ADP - Asociacion de Plataneros** usando **React, Node.js y MySQL**, complementado con **Prisma, Socket.IO, JWT, almacenamiento de imagenes, servicio IA y WhatsApp**.
+Vamos a desarrollar **ADP - Asociacion de Plataneros** usando **React, Node.js y MySQL**, complementado con **Prisma, Socket.IO, JWT de acceso corto, Argon2id, almacenamiento privado de imágenes, servicio IA y WhatsApp**.
 
 La plataforma se apoyara en referencias open source de subastas, marketplaces, IA y prediccion agricola, pero construira su propio flujo especializado para productores de platano: publicacion de cosechas, pujas anonimas, comparacion inteligente por valor total y cierre comercial.
 

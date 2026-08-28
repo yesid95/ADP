@@ -9,6 +9,12 @@ Este espacio reune los documentos base, diagramas y decisiones de exploracion pa
 - `../docs/git-workflow.md`: configuracion Git/GitHub recomendada para versionar ADP.
 - `../docs/roadmap.md`: roadmap por fases para organizar el desarrollo del proyecto.
 - `../docs/fase-1-demo.md`: estado verificado, recorrido y límites de la Fase 1 terminada.
+- `../docs/fase-2-base-de-datos/README.md`: especificación de base de datos y seguridad para la Fase 2.
+- `../docs/fase-2-base-de-datos/modelo-relacional.md`: diagramas ER, relaciones y cardinalidades.
+- `../docs/fase-2-base-de-datos/diccionario-de-datos.md`: tablas, columnas, tipos, restricciones e índices.
+- `../docs/fase-2-base-de-datos/logica-e-integridad.md`: estados, cálculos y transacciones críticas.
+- `../docs/fase-2-base-de-datos/seguridad-de-la-informacion.md`: cifrado, permisos, auditoría y respaldos.
+- `../docs/fase-2-base-de-datos/plan-de-implementacion.md`: orden de migraciones, pruebas y criterio de salida.
 - `llano/cadenas-productivas-culturales.md`: mapa inicial de cadenas productivas y culturales no petroleras del Llano, con oportunidades para IA y trazabilidad.
 - `llano/propuestas-rubrica.md`: propuestas evaluadas contra la rubrica y recomendacion principal para prototipo.
 - `llano/modelo-negocio-pasaporte-vivo.md`: modelo comercial de la propuesta, con pagadores, compradores, precios y flujos de dinero.

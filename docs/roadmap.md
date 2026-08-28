@@ -93,14 +93,18 @@ Se puede hacer una demo de 3 minutos:
 ### Alcance
 
 - Backend Node.js + Express.
-- Base de datos MySQL.
-- ORM Prisma.
-- Autenticacion con JWT + bcrypt.
+- Base de datos MySQL 8.4 con InnoDB.
+- ORM Prisma con migraciones y llaves foráneas reales.
+- Autenticación con Argon2id, JWT de acceso corto y refresh token rotatorio.
 - Roles: finquero, comprador, administrador.
+- MFA obligatorio para administradores.
+- Contactos privados cifrados y separados del módulo de mercado.
 - CRUD de perfiles.
 - CRUD de publicaciones de cosecha.
-- Creacion y listado de pujas.
-- Validaciones de negocio en backend.
+- Creación de pujas con versiones inmutables.
+- Adjudicación única mediante transacción y restricciones.
+- Validaciones de negocio en backend y base de datos.
+- Auditoría append-only, permisos mínimos y respaldos restaurables.
 
 ### Modulos
 
@@ -111,10 +115,16 @@ Se puede hacer una demo de 3 minutos:
 - API de pujas.
 - Middleware de autenticacion.
 - Validaciones de estado de publicacion.
+- Módulo de sesiones y seguridad.
+- Módulo de auditoría.
+
+### Diseño de datos
+
+La especificación de tablas, relaciones, columnas, tipos, índices, seguridad y lógica transaccional está en `docs/fase-2-base-de-datos/README.md`.
 
 ### Criterio de salida
 
-El sistema guarda usuarios, cosechas y pujas en MySQL. Un comprador puede ofertar y un finquero puede aceptar una sola puja valida.
+El sistema guarda usuarios, fincas, cosechas y ofertas en MySQL. Un comprador puede ofertar y revisar sus condiciones sin borrar el historial, y un finquero puede aceptar una sola oferta válida aun bajo solicitudes concurrentes. Los contactos permanecen cifrados y ocultos hasta la adjudicación, y el esquema puede restaurarse desde respaldos probados.
 
 ## Fase 3 - Pujas anonimas en tiempo real
 
@@ -285,6 +295,7 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 - [ ] Implementar autenticación.
 - [ ] Implementar reglas de puja.
 - [ ] Implementar endpoint de aceptación.
+- [x] Documentar arquitectura, relaciones, columnas, seguridad y plan de pruebas de la base de datos.
 
 ### IA
 
