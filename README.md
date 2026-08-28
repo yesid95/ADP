@@ -70,7 +70,7 @@ El detalle, orden de ejecución y criterio de salida están en `docs/fase-2-back
 - Node.js 22.12 o superior; el entorno verificado usa Node 24.
 - npm 11 o superior.
 - Docker Desktop con soporte para Compose.
-- Puertos locales libres: 5173 para React, 3000 para la API y 3306 para MySQL.
+- Puertos locales libres: 5173 —o 5174 si Vite usa el puerto alterno— para React, 3000 para la API y 3306 para MySQL.
 
 Docker se usa solamente para MySQL 8.4 local. El frontend y el backend se ejecutan con Node.js para conservar recarga rápida y depuración directa.
 
@@ -169,6 +169,42 @@ No colocar `BOOTSTRAP_ADMIN_PASSWORD` en el README, `.env.example`, scripts, im�
 
 La interfaz persistente actual implementa los espacios de productor y comprador. La cuenta administradora puede autenticarse, pero la consola visual de administración aún no forma parte del frontend; las operaciones administrativas disponibles en esta fase se realizan mediante la API y exigen MFA.
 
+#### Semilla opcional de usuarios para demostración local
+
+Para probar rápidamente una instalación de desarrollo existe una semilla separada del seed territorial. Crea tres correos deterministas con roles exactos:
+
+| Correo local | Rol |
+|---|---|
+| `admin@adp.local` | `ADMIN` |
+| `productor@adp.local` | `FARMER` |
+| `comprador@adp.local` | `BUYER` (`DISTRIBUTOR`) |
+
+Los tres usan la contraseña local que el operador introduce al ejecutar el comando. Esa contraseña no tiene valor por defecto, debe tener entre 16 y 128 caracteres y nunca se guarda en Git. Desde `backend/`, en PowerShell:
+
+```powershell
+$demoSecret = Read-Host "Contraseña compartida para los usuarios demo" -AsSecureString
+$demoCredential = [PSCredential]::new("adp-demo", $demoSecret)
+$env:DEMO_SEED_PASSWORD = $demoCredential.GetNetworkCredential().Password
+
+try {
+  npm run db:seed:demo-users
+} finally {
+  Remove-Item Env:DEMO_SEED_PASSWORD -ErrorAction SilentlyContinue
+}
+```
+
+En Bash:
+
+```bash
+read -r -s -p "Contraseña compartida para los usuarios demo: " DEMO_SEED_PASSWORD
+printf '\n'
+export DEMO_SEED_PASSWORD
+npm run db:seed:demo-users
+unset DEMO_SEED_PASSWORD
+```
+
+El comando es idempotente: al repetirlo conserva los correos y roles, rota la contraseña, revoca sesiones y factores MFA anteriores y audita cada cuenta. Está bloqueado cuando `NODE_ENV=production`; en producción se usa exclusivamente `admin:bootstrap` y el registro normal de usuarios. No trasladar una base sembrada con cuentas demo a un entorno expuesto.
+
 ### 6. Ejecutar API y frontend
 
 Terminal para backend:
@@ -188,7 +224,7 @@ Servicios:
 
 | Componente | Dirección |
 |---|---|
-| Frontend | `http://127.0.0.1:5173` |
+| Frontend | `http://127.0.0.1:5173` (o `5174` si Vite informa ese puerto) |
 | API | `http://127.0.0.1:3000/api/v1` |
 | Liveness | `http://127.0.0.1:3000/health/live` |
 | Readiness MySQL | `http://127.0.0.1:3000/health/ready` |

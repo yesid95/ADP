@@ -21,6 +21,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:demo-users": "tsx scripts/seed-demo-users.ts",
     "admin:bootstrap": "tsx scripts/bootstrap-admin.ts",
     "db:recovery:drill": "tsx scripts/recovery-drill.ts",
     "db:plans": "tsx scripts/verify-query-plans.ts",
