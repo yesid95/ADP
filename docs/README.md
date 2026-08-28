@@ -15,6 +15,7 @@ Este espacio reune los documentos base, diagramas y decisiones de exploracion pa
 - `../docs/fase-2-base-de-datos/logica-e-integridad.md`: estados, cálculos y transacciones críticas.
 - `../docs/fase-2-base-de-datos/seguridad-de-la-informacion.md`: cifrado, permisos, auditoría y respaldos.
 - `../docs/fase-2-base-de-datos/plan-de-implementacion.md`: orden de migraciones, pruebas y criterio de salida.
+- `../docs/fase-2-backend.md`: estado de la implementación ejecutable de backend en la rama de Fase 2.
 - `llano/cadenas-productivas-culturales.md`: mapa inicial de cadenas productivas y culturales no petroleras del Llano, con oportunidades para IA y trazabilidad.
 - `llano/propuestas-rubrica.md`: propuestas evaluadas contra la rubrica y recomendacion principal para prototipo.
 - `llano/modelo-negocio-pasaporte-vivo.md`: modelo comercial de la propuesta, con pagadores, compradores, precios y flujos de dinero.

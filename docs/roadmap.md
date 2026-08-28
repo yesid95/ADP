@@ -16,7 +16,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 |---|---|---|
 | Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
 | Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
-| Fase 2 | Siguiente | Backend, persistencia, autenticación y reglas reales de negocio |
+| Fase 2 | Terminada técnicamente e integrada en `main` | Backend/MySQL, seguridad, frontend persistente y recuperación verificados; falta desplegar y probar servicios productivos externos |
 
 ## Fase 0 - Preparacion del proyecto
 
@@ -40,7 +40,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 - `docs/llano/stack-tecnologico-seleccionado.md`
 - `docs/roadmap.md`
 
-### Criterio de salida
+### Criterio de salida alcanzado
 
 El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a desarrollar sin depender de explicaciones externas.
 
@@ -125,6 +125,8 @@ La especificación de tablas, relaciones, columnas, tipos, índices, seguridad y
 ### Criterio de salida
 
 El sistema guarda usuarios, fincas, cosechas y ofertas en MySQL. Un comprador puede ofertar y revisar sus condiciones sin borrar el historial, y un finquero puede aceptar una sola oferta válida aun bajo solicitudes concurrentes. Los contactos permanecen cifrados y ocultos hasta la adjudicación, y el esquema puede restaurarse desde respaldos probados.
+
+Los siete frentes están demostrados en `docs/fase-2-backend.md`: MySQL real, CRUD, MFA, permisos, concurrencia, frontend persistente y restauración. `docs/fase-2-operacion.md` conserva resultados y runbook. El despliegue productivo debe repetir la evidencia y validar SMTP/TLS con el proveedor elegido.
 
 ## Fase 3 - Pujas anonimas en tiempo real
 
@@ -266,13 +268,12 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 
 | Prioridad | Fase | Razon |
 |---:|---|---|
-| 1 | Fase 2 | Da base técnica real y persistencia a la demo validada |
-| 2 | Fase 3 | Hace confiable el sistema de pujas en vivo |
-| 3 | Fase 4 | Integra IA comercial real |
-| 4 | Fase 5 | Conecta la decisión con reputación y cierre comercial |
-| 5 | Fase 6 | Valida el producto con usuarios |
-| 6 | Fase 7 | Agrega inteligencia basada en datos |
-| 7 | Fase 8 | Escala el modelo |
+| 1 | Fase 3 | Hace confiable el sistema de pujas en vivo |
+| 2 | Fase 4 | Integra IA comercial real |
+| 3 | Fase 5 | Conecta la decisión con reputación y cierre comercial |
+| 4 | Fase 6 | Valida el producto con usuarios |
+| 5 | Fase 7 | Agrega inteligencia basada en datos |
+| 6 | Fase 8 | Escala el modelo |
 
 ## Backlog inicial por roles
 
@@ -289,12 +290,14 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 
 ### Backend
 
-- [ ] Crear API Node.js + Express.
-- [ ] Configurar Prisma + MySQL.
-- [ ] Definir modelos.
-- [ ] Implementar autenticación.
-- [ ] Implementar reglas de puja.
-- [ ] Implementar endpoint de aceptación.
+- [x] Crear base de API Node.js + Express.
+- [x] Configurar Prisma para MySQL.
+- [x] Definir modelos y migración inicial.
+- [x] Implementar núcleo de autenticación y sesiones.
+- [x] Implementar reglas y versiones de oferta.
+- [x] Implementar endpoint transaccional de aceptación.
+- [x] Validar ciclo completo contra MySQL 8.4 en CI.
+- [x] Separar cuentas MySQL y verificar permisos mínimos y hardening técnico.
 - [x] Documentar arquitectura, relaciones, columnas, seguridad y plan de pruebas de la base de datos.
 
 ### IA

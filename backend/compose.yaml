@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: adp-mysql
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MYSQL_DATABASE: adp
+      MYSQL_USER: adp_app
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD}
+      MYSQL_OBSERVER_PASSWORD: ${MYSQL_OBSERVER_PASSWORD:?define MYSQL_OBSERVER_PASSWORD}
+      MYSQL_AUTH_PASSWORD: ${MYSQL_AUTH_PASSWORD:?define MYSQL_AUTH_PASSWORD}
+      MYSQL_MARKET_PASSWORD: ${MYSQL_MARKET_PASSWORD:?define MYSQL_MARKET_PASSWORD}
+      MYSQL_AUDIT_PASSWORD: ${MYSQL_AUDIT_PASSWORD:?define MYSQL_AUDIT_PASSWORD}
+      MYSQL_AUDITOR_PASSWORD: ${MYSQL_AUDITOR_PASSWORD:?define MYSQL_AUDITOR_PASSWORD}
+      MYSQL_MIGRATOR_PASSWORD: ${MYSQL_MIGRATOR_PASSWORD:?define MYSQL_MIGRATOR_PASSWORD}
+      MYSQL_BACKUP_PASSWORD: ${MYSQL_BACKUP_PASSWORD:?define MYSQL_BACKUP_PASSWORD}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --sql-mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      - --default-time-zone=+00:00
+      - --local-infile=OFF
+    volumes:
+      - adp_mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/security:/opt/adp/security:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mysql-tools:
+    build:
+      context: .
+      dockerfile: database/operations/mysql-tools.Dockerfile
+    profiles: ["operations"]
+    network_mode: none
+    volumes:
+      - adp_mysql_data:/var/lib/mysql:ro
+
+volumes:
+  adp_mysql_data:

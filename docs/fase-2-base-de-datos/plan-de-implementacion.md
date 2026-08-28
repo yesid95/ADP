@@ -331,20 +331,22 @@ No es una estimación comercial. Es un conjunto sintético para encontrar índic
 
 ## Criterio de salida de la Fase 2 de datos
 
-- [ ] Diagrama y diccionario coinciden con schema.prisma.
-- [ ] Todas las relaciones se crean como FOREIGN KEY reales.
-- [ ] Todas las reglas por fila tienen CHECK.
-- [ ] Las reglas de unicidad tienen índices UNIQUE.
-- [ ] La aceptación concurrente produce un ganador.
-- [ ] Las versiones de ofertas son inmutables.
-- [ ] La cuenta del mercado no puede leer contactos.
-- [ ] Contraseñas, tokens y contactos tienen el tratamiento definido.
-- [ ] Auditoría es append-only y no contiene secretos.
-- [ ] Las migraciones funcionan desde una base vacía.
-- [ ] La actualización desde la versión anterior está probada.
-- [ ] Las consultas principales cuentan con EXPLAIN revisado.
-- [ ] Backup completo y recuperación puntual fueron restaurados.
-- [ ] RPO de 15 minutos y RTO de 4 horas fueron medidos.
-- [ ] La documentación y las pruebas están versionadas con el código.
+**Estado integrado de Fase 2:** el esquema, migraciones, relaciones, restricciones, permisos, concurrencia, rendimiento y restauración están versionados y verificados sobre MySQL 8.4.11. El seguimiento general está en `../fase-2-backend.md` y la evidencia operativa en `../fase-2-operacion.md`.
+
+- [x] Diagrama y diccionario coinciden con schema.prisma.
+- [x] Todas las relaciones se crean como FOREIGN KEY reales.
+- [x] Todas las reglas por fila tienen CHECK.
+- [x] Las reglas de unicidad tienen índices UNIQUE.
+- [x] La aceptación concurrente produce un ganador.
+- [x] Las versiones de ofertas son inmutables.
+- [x] La cuenta del mercado no puede leer contactos.
+- [x] Contraseñas, tokens y contactos tienen el tratamiento definido.
+- [x] Auditoría es append-only y no contiene secretos.
+- [x] Las migraciones funcionan desde una base vacía.
+- [x] La actualización desde la versión anterior está probada.
+- [x] Las consultas principales cuentan con EXPLAIN revisado.
+- [x] Backup completo y recuperación puntual fueron restaurados.
+- [x] RPO de 15 minutos y RTO de 4 horas fueron medidos.
+- [x] La documentación y las pruebas están versionadas con el código.
 
 La base de datos no está terminada cuando las tablas existen; está terminada cuando sus restricciones, permisos, concurrencia, restauración y documentación han sido verificadas.

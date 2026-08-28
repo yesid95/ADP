@@ -1,0 +1,208 @@
+# Backend de ADP — Fase 2
+
+Backend TypeScript para persistir usuarios, fincas, cosechas, ofertas versionadas y adjudicaciones sobre MySQL 8.4.
+
+## Estado
+
+El proyecto contiene el cierre técnico ejecutable de Fase 2:
+
+- Express 5 y TypeScript estricto;
+- Prisma 7.9.1, línea soportada para MySQL;
+- 26 modelos relacionales y seis migraciones;
+- FKs, índices, ENUM, CHECK y vista anónima;
+- registro, correo SMTP, recuperación/cambio de contraseña, login, refresh rotatorio y logout;
+- MFA TOTP cifrado, códigos de recuperación de un solo uso y administración RBAC;
+- Argon2id, AES-256-GCM, hashes ciegos y auditoría HMAC;
+- CRUD de perfiles, intereses, fincas, publicaciones y fotografías privadas;
+- ofertas con versiones inmutables;
+- idempotencia;
+- adjudicación única bajo transacción serializable y bloqueo de filas;
+- lectura anónima de ofertas;
+- revelación del contacto únicamente después de adjudicar;
+- clientes separados `adp_auth` y `adp_market`, más cuentas de auditoría, migración, observación y backup;
+- cadena de auditoría HMAC protegida por procedimiento y triggers;
+- catálogos territoriales y de cultivo para el frontend persistente;
+- EXPLAIN ANALYZE, carga HTTP, backup cifrado, PITR y restauración aislada medida.
+
+## Requisitos
+
+- Node.js 22.12 o superior; el entorno verificado usa Node 24.
+- npm 11 o superior.
+- MySQL 8.4.
+- Docker es opcional para la base local.
+
+Prisma 8 no se usa porque su versión actual todavía no soporta MySQL. Prisma 7 permanece soportado.
+
+## Configuración
+
+1. Copiar .env.example como .env.
+2. Cambiar credenciales y generar cinco secretos independientes de 32 bytes.
+
+Ejemplo para generar cada secreto:
+
+~~~bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+~~~
+
+No reutilizar la misma clave para JWT, contactos, MFA, lookup y auditoría.
+
+En desarrollo se admite `MAIL_MODE=token`. En producción el esquema de entorno exige `MAIL_MODE=smtp`; configurar host, puerto, TLS, usuario, contraseña, remitente y `APP_PUBLIC_URL` conforme a `.env.example`.
+
+## MySQL local con Docker
+
+Copiar .env.docker.example como .env.docker, definir las contraseñas independientes indicadas y ejecutar desde backend:
+
+~~~bash
+docker compose --env-file .env.docker up -d
+~~~
+
+La base solo se publica en 127.0.0.1. Después se ejecutan las migraciones y `apply-grants.sh`, en ese orden, como muestra la sección siguiente. Esta composición es para desarrollo; producción debe usar red privada, TLS y backups cifrados.
+
+## Instalación
+
+~~~bash
+npm install
+npm run prisma:validate
+npm run db:migrate:deploy
+npm run db:seed
+docker compose --env-file .env.docker exec mysql sh /opt/adp/security/apply-grants.sh
+npm run dev
+~~~
+
+Antes de publicar el servicio, ejecutar `npm run admin:bootstrap`. El comando requiere `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` y, opcionalmente, `BOOTSTRAP_ADMIN_DISPLAY_NAME`. La contraseña debe tener al menos 16 caracteres y debe proporcionarse temporalmente desde el shell o un gestor de secretos; no se guarda en este repositorio. El procedimiento completo y seguro para PowerShell y Bash está en el README principal.
+
+Para una demostración exclusivamente local, `db:seed:demo-users` crea `admin@adp.local`, `productor@adp.local` y `comprador@adp.local` con roles `ADMIN`, `FARMER` y `BUYER`. Requiere una contraseña temporal en `DEMO_SEED_PASSWORD`, rota las credenciales al repetirse y se niega a ejecutar con `NODE_ENV=production`.
+
+Servidor por defecto:
+
+~~~text
+http://127.0.0.1:3000
+~~~
+
+## Comandos
+
+| Comando | Función |
+|---|---|
+| npm run dev | Servidor con recarga |
+| npm run build | Generar Prisma y compilar TypeScript |
+| npm start | Ejecutar dist/server.js |
+| npm run typecheck | Generar Prisma y verificar tipos |
+| npm test | Ejecutar pruebas |
+| npm run prisma:validate | Validar schema.prisma |
+| npm run db:migrate:dev | Crear/aplicar migraciones de desarrollo |
+| npm run db:migrate:deploy | Aplicar migraciones versionadas |
+| npm run db:seed | Cargar Casanare, municipios y plátano hartón |
+| npm run db:seed:demo-users | Crear o rotar las tres cuentas locales de demostración |
+| npm run admin:bootstrap | Crear o recuperar el administrador, rotar contraseña y revocar sesiones/MFA |
+| npm run db:plans | Verificar ocho planes críticos y métricas MySQL |
+| npm run test:load | Carga HTTP local bajo el rate limit por IP |
+| npm run db:recovery:drill | Backup cifrado, binlog y restore aislado |
+| npm run validate | Esquema, tipos, pruebas y build |
+
+## API inicial
+
+Prefijo: /api/v1.
+
+| Método | Ruta | Acceso | Uso |
+|---|---|---|---|
+| GET | /health/live | Público | Proceso vivo |
+| GET | /health/ready | Público interno | Conexión MySQL |
+| POST | /auth/register | Público limitado | Crear cuenta FARMER o BUYER |
+| POST | /auth/verify-email | Público limitado | Activar correo |
+| POST | /auth/resend-verification | Público limitado | Reenviar activación sin revelar existencia |
+| POST | /auth/request-password-reset | Público limitado | Solicitar recuperación |
+| POST | /auth/reset-password | Público limitado | Consumir token y revocar sesiones |
+| POST | /auth/login | Público limitado | Abrir sesión |
+| POST | /auth/refresh | Público limitado | Rotar sesión |
+| POST | /auth/logout | Público limitado | Revocar refresh token |
+| GET | /catalogs | Público | Departamentos, municipios y cultivos activos |
+| GET | /me | Autenticado | Leer perfil y contacto propio |
+| POST | /me/password | Autenticado | Cambiar contraseña y revocar sesiones |
+| GET | /me/mfa | Autenticado | Consultar estado MFA |
+| POST | /me/mfa/totp/enroll | Autenticado | Crear secreto TOTP pendiente |
+| POST | /me/mfa/totp/confirm | Autenticado | Confirmar TOTP y emitir recuperaciones |
+| POST | /me/mfa/disable | MFA reciente | Revocar factor |
+| GET | /admin/users | ADMIN + MFA | Listar usuarios sin exponer contactos |
+| PATCH | /admin/users/:id/status | ADMIN + MFA | Activar o suspender |
+| PUT | /admin/users/:id/roles | ADMIN + MFA | Reemplazar roles y revocar sesiones |
+| POST | /farms | FARMER | Crear finca activa |
+| POST | /listings | FARMER propietario | Crear publicación DRAFT |
+| POST | /listings/:id/publish | FARMER propietario | Abrir publicación |
+| GET | /listings | Público | Buscar publicaciones abiertas |
+| POST | /listings/:id/bids | BUYER | Crear oferta |
+| POST | /bids/:id/versions | BUYER propietario | Revisar condiciones |
+| GET | /listings/:id/bids | FARMER propietario | Comparar ofertas anónimas |
+| POST | /listings/:id/award | FARMER propietario | Adjudicar una oferta |
+| GET | /listings/:id/award/contact | FARMER propietario | Revelar ganador |
+
+Los comandos de oferta y adjudicación requieren:
+
+~~~text
+Idempotency-Key: identificador-aleatorio-de-16-a-128-caracteres
+~~~
+
+Los campos monetarios y cantidades se reciben como cadenas decimales para evitar pérdida de precisión:
+
+~~~json
+{
+  "unitPriceCopPerKg": "1800.00",
+  "offeredQuantityKg": "2500.000",
+  "sellerLogisticsCostCop": "0.00",
+  "advanceAmountCop": "1000000.00"
+}
+~~~
+
+## Adjudicación
+
+La operación:
+
+1. inicia una transacción SERIALIZABLE;
+2. bloquea la publicación con SELECT FOR UPDATE;
+3. comprueba propietario, estado y plazo;
+4. bloquea la oferta;
+5. congela current_version_no en listing_awards;
+6. cambia publicación, oferta ganadora y ofertas perdedoras;
+7. escribe historiales, idempotencia y auditoría;
+8. confirma una sola vez.
+
+La PK listing_awards.listing_id impide dos ganadores. La FK compuesta listing_id + bid_id impide aceptar una oferta perteneciente a otra publicación.
+
+## Estructura
+
+~~~text
+backend/
+├── prisma/
+│   ├── migrations/
+│   ├── schema.prisma
+│   └── seed.ts
+├── src/
+│   ├── config/
+│   ├── infrastructure/
+│   ├── middleware/
+│   ├── modules/
+│   │   ├── audit/
+│   │   ├── auth/
+│   │   ├── bids/
+│   │   ├── idempotency/
+│   │   └── market/
+│   ├── shared/
+│   ├── app.ts
+│   └── server.ts
+└── tests/
+~~~
+
+## Cierre de Fase 2
+
+1. **MySQL real:** completado con MySQL 8.4, migraciones, seed, ciclo integral y CI efímero.
+2. **API CRUD:** completado para perfiles, intereses, fincas, publicaciones, fotografías e historial propio.
+3. **Autenticación y administración:** completado; el despliegue debe repetir un smoke con el proveedor SMTP definitivo.
+4. **Seguridad MySQL:** completada con cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría append-only y versiones sin UPDATE/DELETE.
+5. **Integración y concurrencia:** completada con autorización negativa, privacidad, idempotencia, 100 adjudicaciones y carga HTTP.
+6. **Frontend:** completado con sesión y API persistente para agricultor y comprador.
+7. **Operación:** completada con ocho EXPLAIN, métricas, backup AES-GCM, recuperación puntual y restauración medida.
+
+Además, la auditoría debe encadenar cada `event_hash` con `previous_hash`, la rotación de claves debe tener procedimiento operativo y cada lectura permitida o denegada de contacto debe quedar registrada.
+
+El detalle operativo, resultados y runbook están en `../docs/fase-2-operacion.md`.
+
+El cierre técnico no autoriza publicar automáticamente el servidor. La infraestructura destino debe repetir migraciones, permisos, integración, restore, alertas y SMTP antes de recibir tráfico.

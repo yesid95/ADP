@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import App from "./App.jsx";
 
 async function openPublicationForm(user) {
-  render(<App />);
+  render(<App initialMode="demo" />);
   await user.click(screen.getByRole("button", { name: "Cosecha" }));
 }
 
@@ -17,7 +17,7 @@ async function publishDefaultListing(user) {
 describe("demo navegable de Fase 1", () => {
   it("mantiene mercado y pujas en espera antes de publicar", async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<App initialMode="demo" />);
 
     await user.click(screen.getByRole("button", { name: "Mercado" }));
     expect(screen.getByRole("heading", { name: "El mercado espera tu publicación" })).toBeInTheDocument();

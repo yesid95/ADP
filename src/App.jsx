@@ -22,6 +22,7 @@ import {
   validateAiFields,
   validateListing
 } from "./lib/demo.js";
+import { PlatformApp } from "./components/PlatformApp.jsx";
 
 const tabIcons = {
   finca: <UserRound aria-hidden="true" size={18} />,
@@ -34,7 +35,7 @@ function freshPhotos() {
   return demoPhotos.map((photo) => ({ ...photo }));
 }
 
-function App() {
+function DemoApp({ onOpenPlatform }) {
   const [activeTab, setActiveTab] = useState("finca");
   const [status, setStatus] = useState("draft");
   const [draft, setDraft] = useState({ ...initialListing });
@@ -218,9 +219,12 @@ function App() {
             <p className="eyebrow">Demo Fase 1 · {status === "draft" ? "Borrador" : status === "published" ? "Publicada" : "Puja aceptada"}</p>
             <h2>{listingTitle(activeListing)}</h2>
           </div>
-          <button className="secondary-button compact-button" onClick={resetDemo} type="button">
-            Reiniciar demo
-          </button>
+          <div className="button-row">
+            {onOpenPlatform && <button className="primary-button compact-button" onClick={onOpenPlatform} type="button">Usar plataforma real</button>}
+            <button className="secondary-button compact-button" onClick={resetDemo} type="button">
+              Reiniciar demo
+            </button>
+          </div>
         </header>
 
         <section className="summary-grid" aria-label="Resumen de la publicación">
@@ -279,6 +283,14 @@ function App() {
       />
     </div>
   );
+}
+
+function App({ initialMode = "platform", api }) {
+  const [mode, setMode] = useState(initialMode);
+  if (mode === "demo") {
+    return <DemoApp onOpenPlatform={() => setMode("platform")} />;
+  }
+  return <PlatformApp client={api} onOpenDemo={() => setMode("demo")} />;
 }
 
 export default App;
