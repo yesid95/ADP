@@ -6,11 +6,13 @@ dist/
 build/
 .next/
 coverage/
+backend/src/generated/prisma/
 
 # Environment files
 .env
 .env.*
 !.env.example
+!.env.*.example
 
 # Logs
 *.log
