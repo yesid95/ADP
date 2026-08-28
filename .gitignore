@@ -39,3 +39,6 @@ temp/
 
 # Generated assets
 *.local.*
+
+# Local browser QA evidence (may contain session state)
+dogfood-output/
