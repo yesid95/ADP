@@ -22,6 +22,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:recovery:drill": "tsx scripts/recovery-drill.ts",
+    "db:plans": "tsx scripts/verify-query-plans.ts",
+    "test:load": "tsx scripts/load-smoke.ts",
     "validate": "npm run prisma:validate && npm run typecheck && npm test && npm run build",
     "validate:database": "npm run db:wait && npm run db:migrate:deploy && npm run db:seed && npm run test:integration"
   },
