@@ -4,7 +4,7 @@ Backend TypeScript para persistir usuarios, fincas, cosechas, ofertas versionada
 
 ## Estado
 
-Esta rama contiene el cierre técnico ejecutable de Fase 2:
+El proyecto contiene el cierre técnico ejecutable de Fase 2:
 
 - Express 5 y TypeScript estricto;
 - Prisma 7.9.1, línea soportada para MySQL;

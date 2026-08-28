@@ -6,7 +6,7 @@ La propuesta busca resolver un problema simple pero fuerte: el productor no siem
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 terminada; cierre técnico de Fase 2 completado en la rama `codex/fase-2-backend`.
+**Fase actual:** Fases 1 y 2 terminadas; el cierre técnico de Fase 2 está integrado en `main`.
 
 La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
@@ -27,7 +27,7 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 - Cierre por WhatsApp con mensaje dinámico y destinatario opcional por entorno.
 - Acción para reiniciar y repetir la demo.
 
-### Avance de Fase 2 en la rama dedicada
+### Fase 2 implementada
 
 - Backend Node.js + Express y TypeScript estricto.
 - Prisma para MySQL 8.4 con 26 modelos, seis migraciones, llaves foráneas y restricciones reales.
@@ -49,9 +49,9 @@ La implementación ejecutable y su estado están en `backend/README.md` y `docs/
 
 ### Estado verificable de cierre de Fase 2
 
-La rama contiene 26 modelos Prisma, seis migraciones, autenticación/MFA, administración, cifrado de contactos, CRUD comercial, privilegios efectivos, adjudicación transaccional, idempotencia y pruebas sobre MySQL 8.4. Esto todavía no equivale a una Fase 2 terminada.
+El proyecto contiene 26 modelos Prisma, seis migraciones, autenticación/MFA, administración, cifrado de contactos, CRUD comercial, privilegios efectivos, adjudicación transaccional, idempotencia y pruebas sobre MySQL 8.4. Esta evidencia acredita el cierre técnico de Fase 2.
 
-| Frente de cierre | Estado actual | Evidencia que falta para cerrarlo |
+| Frente de cierre | Estado actual | Evidencia verificada |
 |---|---|---|
 | MySQL 8.4 real | Completo | Migraciones, seed, ciclo completo, reinicio frío y CI MySQL 8.4 |
 | API CRUD | Completo | Perfiles, intereses, fincas, publicaciones, fotos privadas, ofertas e historial |

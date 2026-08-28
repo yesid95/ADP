@@ -16,7 +16,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 |---|---|---|
 | Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
 | Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
-| Fase 2 | Terminada técnicamente en rama | Backend/MySQL, seguridad, frontend persistente y recuperación verificados; falta desplegar y probar servicios productivos externos |
+| Fase 2 | Terminada técnicamente e integrada en `main` | Backend/MySQL, seguridad, frontend persistente y recuperación verificados; falta desplegar y probar servicios productivos externos |
 
 ## Fase 0 - Preparacion del proyecto
 
@@ -268,13 +268,12 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 
 | Prioridad | Fase | Razon |
 |---:|---|---|
-| 1 | Fase 2 | Da base técnica real y persistencia a la demo validada |
-| 2 | Fase 3 | Hace confiable el sistema de pujas en vivo |
-| 3 | Fase 4 | Integra IA comercial real |
-| 4 | Fase 5 | Conecta la decisión con reputación y cierre comercial |
-| 5 | Fase 6 | Valida el producto con usuarios |
-| 6 | Fase 7 | Agrega inteligencia basada en datos |
-| 7 | Fase 8 | Escala el modelo |
+| 1 | Fase 3 | Hace confiable el sistema de pujas en vivo |
+| 2 | Fase 4 | Integra IA comercial real |
+| 3 | Fase 5 | Conecta la decisión con reputación y cierre comercial |
+| 4 | Fase 6 | Valida el producto con usuarios |
+| 5 | Fase 7 | Agrega inteligencia basada en datos |
+| 6 | Fase 8 | Escala el modelo |
 
 ## Backlog inicial por roles
 
@@ -298,7 +297,7 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 - [x] Implementar reglas y versiones de oferta.
 - [x] Implementar endpoint transaccional de aceptación.
 - [x] Validar ciclo completo contra MySQL 8.4 en CI.
-- [ ] Separar cuentas MySQL y completar hardening de producción.
+- [x] Separar cuentas MySQL y verificar permisos mínimos y hardening técnico.
 - [x] Documentar arquitectura, relaciones, columnas, seguridad y plan de pruebas de la base de datos.
 
 ### IA

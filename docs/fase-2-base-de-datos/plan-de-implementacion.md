@@ -331,7 +331,7 @@ No es una estimación comercial. Es un conjunto sintético para encontrar índic
 
 ## Criterio de salida de la Fase 2 de datos
 
-**Estado de la rama de Fase 2:** el esquema, migraciones, relaciones, restricciones, permisos, concurrencia, rendimiento y restauración están versionados y verificados sobre MySQL 8.4.11. El seguimiento general está en `../fase-2-backend.md` y la evidencia operativa en `../fase-2-operacion.md`.
+**Estado integrado de Fase 2:** el esquema, migraciones, relaciones, restricciones, permisos, concurrencia, rendimiento y restauración están versionados y verificados sobre MySQL 8.4.11. El seguimiento general está en `../fase-2-backend.md` y la evidencia operativa en `../fase-2-operacion.md`.
 
 - [x] Diagrama y diccionario coinciden con schema.prisma.
 - [x] Todas las relaciones se crean como FOREIGN KEY reales.

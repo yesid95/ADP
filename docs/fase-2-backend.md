@@ -87,6 +87,6 @@ Este documento diferencia código existente de evidencia de cierre. Un frente no
 
 ### Definición de terminado
 
-El cierre técnico de Fase 2 fue alcanzado en `codex/fase-2-backend`: un entorno limpio puede migrar y cargar datos, el frontend completa el ciclo comercial con persistencia, solicitudes concurrentes producen una sola adjudicación, los datos privados están aislados por permisos efectivos, MFA protege administración y un respaldo real se restaura dentro de los objetivos documentados.
+El cierre técnico de Fase 2 está integrado en `main`: un entorno limpio puede migrar y cargar datos, el frontend completa el ciclo comercial con persistencia, solicitudes concurrentes producen una sola adjudicación, los datos privados están aislados por permisos efectivos, MFA protege administración y un respaldo real se restaura dentro de los objetivos documentados.
 
 Antes de desplegar se repiten estas pruebas en la infraestructura destino y se valida el proveedor SMTP real. Esas puertas pertenecen al despliegue del entorno y no se sustituyen con la evidencia local.
