@@ -112,6 +112,7 @@ GRANT SELECT, INSERT, UPDATE ON adp.harvest_listings TO 'adp_market'@'%';
 GRANT SELECT, INSERT, UPDATE, DELETE ON adp.harvest_photos TO 'adp_market'@'%';
 GRANT SELECT, INSERT, UPDATE ON adp.bids TO 'adp_market'@'%';
 GRANT SELECT, INSERT ON adp.bid_versions TO 'adp_market'@'%';
+GRANT SELECT ON adp.v_anonymous_bid_latest TO 'adp_market'@'%';
 GRANT SELECT, INSERT, UPDATE ON adp.listing_awards TO 'adp_market'@'%';
 GRANT SELECT, INSERT ON adp.listing_status_events TO 'adp_market'@'%';
 GRANT SELECT, INSERT ON adp.bid_status_events TO 'adp_market'@'%';

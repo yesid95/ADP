@@ -1,7 +1,7 @@
 import { Prisma } from "../../generated/prisma/client.js";
 import type { RequestContext } from "../../shared/request-context.js";
 import { AppError } from "../../shared/errors.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getMarketPrisma } from "../../infrastructure/database/prisma.js";
 import { inSerializableTransaction } from "../../shared/transaction.js";
 import { writeAudit } from "../audit/audit.service.js";
 
@@ -44,7 +44,7 @@ export async function createFarm(
   input: CreateFarmInput,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
   return prisma.$transaction(async (transaction) => {
     await assertFarmerRole(transaction, ownerUserId);
     const municipality = await transaction.municipality.findUnique({
@@ -89,7 +89,7 @@ export async function createHarvestListing(
   input: CreateListingInput,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
   return prisma.$transaction(async (transaction) => {
     await assertFarmerRole(transaction, ownerUserId);
     const farm = await transaction.farm.findUnique({
@@ -221,7 +221,7 @@ export async function publishHarvestListing(
 }
 
 export async function listOpenHarvestListings() {
-  const listings = await getPrisma().harvestListing.findMany({
+  const listings = await getMarketPrisma().harvestListing.findMany({
     where: {
       status: "OPEN",
       bidDeadlineAt: { gt: new Date() },

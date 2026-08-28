@@ -40,6 +40,14 @@ const envSchema = z.object({
   DATABASE_PASSWORD: z.string().min(1),
   DATABASE_NAME: z.string().min(1),
   DATABASE_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(100).default(10),
+  AUTH_DATABASE_USER: z.string().min(1).optional(),
+  AUTH_DATABASE_PASSWORD: z.string().min(1).optional(),
+  MARKET_DATABASE_USER: z.string().min(1).optional(),
+  MARKET_DATABASE_PASSWORD: z.string().min(1).optional(),
+  AUDIT_DATABASE_USER: z.string().min(1).optional(),
+  AUDIT_DATABASE_PASSWORD: z.string().min(1).optional(),
+  AUDITOR_DATABASE_USER: z.string().min(1).optional(),
+  AUDITOR_DATABASE_PASSWORD: z.string().min(1).optional(),
   PRIVATE_UPLOAD_DIR: z.string().min(1).default("./uploads"),
   MAX_PHOTO_BYTES: z.coerce
     .number()
@@ -74,6 +82,22 @@ const envSchema = z.object({
       path: ["MAIL_MODE"],
       message: "must be smtp in production"
     });
+  }
+  if (env.NODE_ENV === "production") {
+    for (const field of [
+      "AUTH_DATABASE_USER",
+      "AUTH_DATABASE_PASSWORD",
+      "MARKET_DATABASE_USER",
+      "MARKET_DATABASE_PASSWORD"
+    ] as const) {
+      if (!env[field]) {
+        context.addIssue({
+          code: "custom",
+          path: [field],
+          message: "is required in production for database privilege separation"
+        });
+      }
+    }
   }
   if (env.MAIL_MODE === "smtp") {
     for (const field of ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"] as const) {

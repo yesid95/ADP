@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "../../generated/prisma/client.js";
 import type { RoleCode } from "../../generated/prisma/enums.js";
 import { getEnv } from "../../config/env.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getAuthPrisma } from "../../infrastructure/database/prisma.js";
 import {
   decryptField,
   encryptField,
@@ -25,7 +25,7 @@ function normalizeRecoveryCode(value: string): string {
 }
 
 async function getCredentialOrThrow(userId: string, password: string): Promise<void> {
-  const credential = await getPrisma().passwordCredential.findUnique({ where: { userId } });
+  const credential = await getAuthPrisma().passwordCredential.findUnique({ where: { userId } });
   if (!credential || !(await verifyPassword(credential.passwordHash, password))) {
     throw new AppError(401, "CURRENT_PASSWORD_INVALID", "The current password is incorrect");
   }
@@ -97,7 +97,7 @@ export async function getOwnMfaStatus(userId: string): Promise<{
   enabledAt: Date | null;
   remainingRecoveryCodes: number;
 }> {
-  const factor = await getPrisma().mfaFactor.findFirst({
+  const factor = await getAuthPrisma().mfaFactor.findFirst({
     where: { userId, enabledAt: { not: null }, revokedAt: null },
     orderBy: { createdAt: "desc" },
     include: { recoveryCodes: { where: { usedAt: null }, select: { id: true } } }
@@ -115,7 +115,7 @@ export async function enrollTotp(
   context: RequestContext
 ): Promise<{ factorId: string; secret: string; otpauthUri: string }> {
   await getCredentialOrThrow(userId, password);
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const factorId = randomUUID();
   const secret = generateTotpSecret();
 
@@ -168,7 +168,7 @@ export async function confirmTotp(
   code: string,
   context: RequestContext
 ): Promise<{ accessToken: string; recoveryCodes: string[] }> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const verifiedAt = new Date();
   const recoveryCodes = Array.from({ length: RECOVERY_CODE_COUNT }, () =>
     randomToken(9).toUpperCase()
@@ -240,7 +240,7 @@ export async function disableMfa(
   context: RequestContext
 ): Promise<void> {
   await getCredentialOrThrow(userId, password);
-  await getPrisma().$transaction(async (transaction) => {
+  await getAuthPrisma().$transaction(async (transaction) => {
     await transaction.mfaFactor.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() }

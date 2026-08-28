@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Prisma } from "../../generated/prisma/client.js";
 import type { BuyerType, RoleCode } from "../../generated/prisma/enums.js";
 import { getEnv } from "../../config/env.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getAuthPrisma } from "../../infrastructure/database/prisma.js";
 import { sendTransactionalMail } from "../../infrastructure/mail/mailer.js";
 import { writeAudit } from "../audit/audit.service.js";
 import {
@@ -111,7 +111,7 @@ export async function registerUser(
   user: { id: string; displayName: string; status: "PENDING"; roles: RoleCode[] };
   verificationToken?: string;
 }> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const env = getEnv();
   const userId = randomUUID();
   const email = normalizeEmail(input.email);
@@ -216,7 +216,7 @@ export async function resendEmailVerification(
   rawEmail: string,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const env = getEnv();
   const email = normalizeEmail(rawEmail);
   const contact = await prisma.userPrivateContact.findUnique({
@@ -260,7 +260,7 @@ export async function resendEmailVerification(
 }
 
 export async function verifyEmail(token: string, context: RequestContext): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const tokenHash = sha256(token);
 
   await prisma.$transaction(async (transaction) => {
@@ -310,7 +310,7 @@ export async function requestPasswordReset(
   rawEmail: string,
   context: RequestContext
 ): Promise<{ resetToken?: string }> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const env = getEnv();
   const email = normalizeEmail(rawEmail);
   const contact = await prisma.userPrivateContact.findUnique({
@@ -359,7 +359,7 @@ export async function resetPassword(
   newPassword: string,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const passwordHash = await hashPassword(newPassword);
   await prisma.$transaction(async (transaction) => {
     const record = await transaction.authToken.findUnique({
@@ -412,7 +412,7 @@ export async function changePassword(
   newPassword: string,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const credential = await prisma.passwordCredential.findUnique({ where: { userId } });
   if (!credential || !(await verifyPassword(credential.passwordHash, currentPassword))) {
     throw new AppError(401, "CURRENT_PASSWORD_INVALID", "The current password is incorrect");
@@ -452,7 +452,7 @@ async function recordFailedLogin(
   currentCount: number,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const nextCount = currentCount + 1;
   const lockedUntil =
     nextCount >= MAX_FAILED_LOGINS
@@ -484,7 +484,7 @@ export async function loginUser(
   input: LoginInput,
   context: RequestContext
 ): Promise<TokenPair> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const env = getEnv();
   const emailLookupHash = hmacSha256(
     normalizeEmail(input.email),
@@ -563,7 +563,7 @@ export async function refreshSession(
   refreshToken: string,
   context: RequestContext
 ): Promise<TokenPair> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const refreshTokenHash = sha256(refreshToken);
   const session = await prisma.authSession.findUnique({
     where: { refreshTokenHash },
@@ -629,7 +629,7 @@ export async function logoutSession(
   refreshToken: string,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   const session = await prisma.authSession.findUnique({
     where: { refreshTokenHash: sha256(refreshToken) },
     select: { id: true, userId: true, revokedAt: true }

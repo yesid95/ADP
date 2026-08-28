@@ -1,7 +1,7 @@
 import { Prisma } from "../../generated/prisma/client.js";
 import type { BuyerType } from "../../generated/prisma/enums.js";
 import { getEnv } from "../../config/env.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getAuthPrisma } from "../../infrastructure/database/prisma.js";
 import {
   contactFieldAad,
   decryptField
@@ -36,7 +36,7 @@ async function assertRole(
 
 export async function getOwnProfile(userId: string) {
   const env = getEnv();
-  const user = await getPrisma().user.findUnique({
+  const user = await getAuthPrisma().user.findUnique({
     where: { id: userId },
     include: {
       privateContact: true,
@@ -106,7 +106,7 @@ export async function updateOwnIdentity(
   displayName: string,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   return prisma.$transaction(async (transaction) => {
     const user = await transaction.user.update({
       where: { id: userId },
@@ -132,7 +132,7 @@ export async function updateFarmerProfile(
   publicBio: string | null,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   return prisma.$transaction(async (transaction) => {
     await assertRole(transaction, userId, "FARMER");
     const profile = await transaction.farmerProfile.upsert({
@@ -162,7 +162,7 @@ export async function updateBuyerProfile(
   },
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   return prisma.$transaction(async (transaction) => {
     await assertRole(transaction, userId, "BUYER");
     const profile = await transaction.buyerProfile.upsert({
@@ -189,7 +189,7 @@ export async function replaceBuyerInterests(
   municipalityIds: number[],
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   return prisma.$transaction(async (transaction) => {
     await assertRole(transaction, userId, "BUYER");
 
@@ -267,7 +267,7 @@ export async function deleteOwnAccount(
   userId: string,
   context: RequestContext
 ): Promise<void> {
-  const prisma = getPrisma();
+  const prisma = getAuthPrisma();
   await prisma.$transaction(async (transaction) => {
     const deletedAt = new Date();
     await transaction.user.update({

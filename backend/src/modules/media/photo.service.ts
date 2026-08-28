@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getMarketPrisma } from "../../infrastructure/database/prisma.js";
 import { sha256 } from "../../shared/crypto.js";
 import { AppError } from "../../shared/errors.js";
 import type { RequestContext } from "../../shared/request-context.js";
@@ -131,7 +131,7 @@ export async function uploadHarvestPhoto(
 }
 
 export async function readPublicHarvestPhoto(listingId: string, photoId: string) {
-  const photo = await getPrisma().harvestPhoto.findFirst({
+  const photo = await getMarketPrisma().harvestPhoto.findFirst({
     where: {
       id: photoId,
       listingId,
@@ -159,7 +159,7 @@ export async function readOwnHarvestPhoto(
   listingId: string,
   photoId: string
 ) {
-  const photo = await getPrisma().harvestPhoto.findFirst({
+  const photo = await getMarketPrisma().harvestPhoto.findFirst({
     where: { id: photoId, listingId, listing: { farm: { ownerUserId } } },
     select: { storageKey: true, mimeType: true, sha256: true }
   });

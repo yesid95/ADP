@@ -1,6 +1,9 @@
 import { Prisma } from "../../generated/prisma/client.js";
 import { getEnv } from "../../config/env.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import {
+  getAuthPrisma,
+  getMarketPrisma
+} from "../../infrastructure/database/prisma.js";
 import {
   contactFieldAad,
   decryptField
@@ -236,7 +239,7 @@ export async function reviseBid(
 }
 
 export async function listAnonymousBids(farmerUserId: string, listingId: string) {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
   const listing = await prisma.harvestListing.findFirst({
     where: { id: listingId, farm: { ownerUserId: farmerUserId } },
     select: { id: true }
@@ -444,46 +447,49 @@ export async function revealAwardedBuyerContact(
   context: RequestContext
 ) {
   const env = getEnv();
-  const prisma = getPrisma();
-  return prisma.$transaction(async (transaction) => {
-    const award = await transaction.listingAward.findUnique({
-      where: { listingId },
-      include: {
-        listing: { include: { farm: { select: { ownerUserId: true } } } },
-        bid: {
-          include: {
-            buyer: {
-              include: {
-                privateContact: true,
-                buyerProfile: true
-              }
+  const marketPrisma = getMarketPrisma();
+  const award = await marketPrisma.listingAward.findUnique({
+    where: { listingId },
+    include: {
+      listing: { include: { farm: { select: { ownerUserId: true } } } },
+      bid: {
+        select: {
+          buyer: {
+            select: {
+              id: true,
+              displayName: true,
+              buyerProfile: true
             }
           }
         }
       }
-    });
-    if (!award || award.listing.farm.ownerUserId !== farmerUserId) {
-      throw new AppError(404, "AWARD_NOT_FOUND", "Award was not found");
     }
-    const buyer = award.bid.buyer;
-    const contact = buyer.privateContact;
-    if (!contact) {
-      throw new AppError(409, "BUYER_CONTACT_MISSING", "Buyer contact is unavailable");
-    }
+  });
+  if (!award || award.listing.farm.ownerUserId !== farmerUserId) {
+    throw new AppError(404, "AWARD_NOT_FOUND", "Award was not found");
+  }
+  const buyer = award.bid.buyer;
+  const contact = await getAuthPrisma().userPrivateContact.findUnique({
+    where: { userId: buyer.id }
+  });
+  if (!contact) {
+    throw new AppError(409, "BUYER_CONTACT_MISSING", "Buyer contact is unavailable");
+  }
 
-    const email = decryptField(
-      contact.emailCiphertext,
-      env.CONTACT_ENCRYPTION_KEY_BASE64,
-      contactFieldAad(buyer.id, "email", contact.keyVersion)
-    );
-    const phone = contact.phoneCiphertext
-      ? decryptField(
-          contact.phoneCiphertext,
-          env.CONTACT_ENCRYPTION_KEY_BASE64,
-          contactFieldAad(buyer.id, "phone", contact.keyVersion)
-        )
-      : null;
+  const email = decryptField(
+    contact.emailCiphertext,
+    env.CONTACT_ENCRYPTION_KEY_BASE64,
+    contactFieldAad(buyer.id, "email", contact.keyVersion)
+  );
+  const phone = contact.phoneCiphertext
+    ? decryptField(
+        contact.phoneCiphertext,
+        env.CONTACT_ENCRYPTION_KEY_BASE64,
+        contactFieldAad(buyer.id, "phone", contact.keyVersion)
+      )
+    : null;
 
+  await marketPrisma.$transaction(async (transaction) => {
     if (!award.buyerIdentityRevealedAt) {
       await transaction.listingAward.update({
         where: { listingId },
@@ -500,12 +506,11 @@ export async function revealAwardedBuyerContact(
       ipHash: context.ipHash,
       metadata: { buyerUserId: buyer.id }
     });
-
-    return {
-      displayName: buyer.displayName,
-      businessName: buyer.buyerProfile?.businessName ?? null,
-      email,
-      phone
-    };
   });
+  return {
+    displayName: buyer.displayName,
+    businessName: buyer.buyerProfile?.businessName ?? null,
+    email,
+    phone
+  };
 }

@@ -1,5 +1,5 @@
 import { Prisma } from "../generated/prisma/client.js";
-import { getPrisma } from "../infrastructure/database/prisma.js";
+import { getMarketPrisma } from "../infrastructure/database/prisma.js";
 
 const MAX_ATTEMPTS = 3;
 
@@ -33,7 +33,7 @@ export function isRetryableTransactionError(error: unknown): boolean {
 export async function inSerializableTransaction<T>(
   operation: (transaction: Prisma.TransactionClient) => Promise<T>
 ): Promise<T> {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     try {

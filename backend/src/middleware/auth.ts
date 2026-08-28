@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 import type { RoleCode } from "../generated/prisma/enums.js";
 import { getEnv } from "../config/env.js";
-import { getPrisma } from "../infrastructure/database/prisma.js";
+import { getAuthPrisma } from "../infrastructure/database/prisma.js";
 import { AppError } from "../shared/errors.js";
 import { verifyAccessToken } from "../shared/tokens.js";
 
@@ -14,7 +14,7 @@ export const authenticate: RequestHandler = async (request, _response, next) => 
 
   try {
     const claims = await verifyAccessToken(authorization.slice(7));
-    const session = await getPrisma().authSession.findFirst({
+    const session = await getAuthPrisma().authSession.findFirst({
       where: {
         id: claims.sessionId,
         userId: claims.userId,

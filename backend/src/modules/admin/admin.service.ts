@@ -3,7 +3,7 @@ import type {
   RoleCode,
   UserStatus
 } from "../../generated/prisma/enums.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getAuthPrisma } from "../../infrastructure/database/prisma.js";
 import { AppError } from "../../shared/errors.js";
 import type { RequestContext } from "../../shared/request-context.js";
 import { writeAudit } from "../audit/audit.service.js";
@@ -14,7 +14,7 @@ export async function listUsers(input: {
   limit: number;
   cursor?: string | undefined;
 }) {
-  const users = await getPrisma().user.findMany({
+  const users = await getAuthPrisma().user.findMany({
     where: {
       ...(input.status ? { status: input.status } : {}),
       ...(input.role ? { roles: { some: { roleCode: input.role } } } : {})
@@ -48,7 +48,7 @@ export async function updateUserStatus(
   if (actorUserId === userId) {
     throw new AppError(409, "ADMIN_SELF_CHANGE_FORBIDDEN", "Administrators cannot change their own status");
   }
-  return getPrisma().$transaction(async (transaction) => {
+  return getAuthPrisma().$transaction(async (transaction) => {
     const user = await transaction.user.findUnique({
       where: { id: userId },
       select: { id: true, status: true }
@@ -91,7 +91,7 @@ export async function replaceUserRoles(
   if (actorUserId === userId) {
     throw new AppError(409, "ADMIN_SELF_CHANGE_FORBIDDEN", "Administrators cannot change their own roles");
   }
-  return getPrisma().$transaction(async (transaction) => {
+  return getAuthPrisma().$transaction(async (transaction) => {
     const user = await transaction.user.findUnique({
       where: { id: userId },
       include: { farmerProfile: true, buyerProfile: true }

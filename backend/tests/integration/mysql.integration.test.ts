@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import request from "supertest";
+import mariadb, { type Connection } from "mariadb";
 import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "../../src/app.js";
 import {
@@ -7,6 +8,12 @@ import {
   getPrisma
 } from "../../src/infrastructure/database/prisma.js";
 import { currentTotpStep, totpAtStep } from "../../src/shared/totp.js";
+import { databaseBytesEqual } from "../../src/shared/crypto.js";
+import {
+  verifyAuditEventHash,
+  type AuditInput
+} from "../../src/modules/audit/audit.service.js";
+import { getEnv } from "../../src/config/env.js";
 
 interface TestAccount {
   userId: string;
@@ -54,7 +61,7 @@ async function createVerifiedAccount(
       ...(role === "BUYER" ? { buyerType: "DISTRIBUTOR" } : {})
     });
 
-  expect(registration.status).toBe(201);
+  expect(registration.status, JSON.stringify(registration.body)).toBe(201);
   expect(registration.body.verificationToken).toBeTypeOf("string");
 
   const verification = await request(app)
@@ -99,6 +106,15 @@ describe("MySQL 8.4 integration", () => {
     expect(versionRows[0]?.version).toMatch(/^8\.4\./);
     expect(Number(foreignKeyRows[0]?.total)).toBeGreaterThanOrEqual(34);
     expect(Number(checkRows[0]?.total)).toBeGreaterThanOrEqual(30);
+    const anonymousViewColumns = await prisma.$queryRawUnsafe<Array<{ columnName: string }>>(
+      "SELECT COLUMN_NAME AS columnName FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'v_anonymous_bid_latest' ORDER BY ORDINAL_POSITION"
+    );
+    expect(anonymousViewColumns.map(({ columnName }) => columnName)).not.toContain(
+      "buyer_user_id"
+    );
+    expect(anonymousViewColumns.map(({ columnName }) => columnName)).toContain(
+      "anonymous_label"
+    );
     await expect(prisma.municipality.count()).resolves.toBe(19);
     await expect(
       prisma.cropVariety.findUnique({ where: { code: "PLATANO_HARTON" } })
@@ -106,6 +122,9 @@ describe("MySQL 8.4 integration", () => {
   });
 
   it("persists the complete anonymous bid and concurrent award lifecycle", async () => {
+    const initialAuditHead = await prisma.auditChainHead.findUniqueOrThrow({
+      where: { id: 1 }
+    });
     const [farmer, buyerA, buyerB, admin, managed] = await Promise.all([
       createVerifiedAccount("FARMER", "farmer"),
       createVerifiedAccount("BUYER", "buyer-a"),
@@ -147,7 +166,7 @@ describe("MySQL 8.4 integration", () => {
     admin.accessToken = confirmation.body.data.accessToken;
 
     const adminUsers = await request(app)
-      .get("/api/v1/admin/users?role=FARMER&limit=10")
+      .get("/api/v1/admin/users?role=FARMER&limit=100")
       .set("Authorization", authorization(admin.accessToken));
     expect(adminUsers.status).toBe(200);
     expect(adminUsers.body.data.some(({ id }: { id: string }) => id === managed.userId)).toBe(
@@ -663,5 +682,116 @@ describe("MySQL 8.4 integration", () => {
       .get("/api/v1/me")
       .set("Authorization", authorization(buyerB.accessToken));
     expect(deletedSession.status).toBe(401);
+
+    const newAuditEvents = await prisma.auditEvent.findMany({
+      ...(initialAuditHead.lastEventId
+        ? { where: { id: { gt: initialAuditHead.lastEventId } } }
+        : {}),
+      orderBy: { id: "asc" }
+    });
+    expect(newAuditEvents.length).toBeGreaterThan(20);
+    let previousHash = initialAuditHead.currentHash;
+    for (const event of newAuditEvents) {
+      if (previousHash) {
+        expect(event.previousHash).not.toBeNull();
+        expect(
+          databaseBytesEqual(event.previousHash ?? new Uint8Array(), previousHash)
+        ).toBe(true);
+      } else {
+        expect(event.previousHash).toBeNull();
+      }
+      const auditInput: AuditInput = {
+        ...(event.actorUserId ? { actorUserId: event.actorUserId } : {}),
+        actionCode: event.actionCode,
+        entityType: event.entityType,
+        ...(event.entityId ? { entityId: event.entityId } : {}),
+        outcome: event.outcome,
+        requestId: event.requestId,
+        ...(event.ipHash ? { ipHash: event.ipHash } : {}),
+        ...(event.metadata
+          ? { metadata: event.metadata as AuditInput["metadata"] }
+          : {})
+      };
+      expect(
+        verifyAuditEventHash(auditInput, event.occurredAt, event.previousHash, event.eventHash)
+      ).toBe(true);
+      previousHash = event.eventHash;
+    }
+    const finalAuditHead = await prisma.auditChainHead.findUniqueOrThrow({ where: { id: 1 } });
+    expect(finalAuditHead.lastEventId).toBe(newAuditEvents.at(-1)?.id);
+    expect(
+      databaseBytesEqual(
+        finalAuditHead.currentHash ?? new Uint8Array(),
+        newAuditEvents.at(-1)?.eventHash ?? new Uint8Array()
+      )
+    ).toBe(true);
+  });
+
+  it("enforces technical account boundaries and append-only tables", async () => {
+    const env = getEnv();
+    if (
+      !env.AUTH_DATABASE_USER ||
+      !env.AUTH_DATABASE_PASSWORD ||
+      !env.MARKET_DATABASE_USER ||
+      !env.MARKET_DATABASE_PASSWORD ||
+      !env.AUDIT_DATABASE_USER ||
+      !env.AUDIT_DATABASE_PASSWORD ||
+      !env.AUDITOR_DATABASE_USER ||
+      !env.AUDITOR_DATABASE_PASSWORD
+    ) {
+      throw new Error("Technical database credentials are required for integration tests");
+    }
+
+    async function connect(user: string, password: string): Promise<Connection> {
+      return mariadb.createConnection({
+        host: env.DATABASE_HOST,
+        port: env.DATABASE_PORT,
+        user,
+        password,
+        database: env.DATABASE_NAME,
+        allowPublicKeyRetrieval: true
+      });
+    }
+
+    const auth = await connect(env.AUTH_DATABASE_USER, env.AUTH_DATABASE_PASSWORD);
+    const market = await connect(env.MARKET_DATABASE_USER, env.MARKET_DATABASE_PASSWORD);
+    const auditWriter = await connect(env.AUDIT_DATABASE_USER, env.AUDIT_DATABASE_PASSWORD);
+    const auditor = await connect(env.AUDITOR_DATABASE_USER, env.AUDITOR_DATABASE_PASSWORD);
+    try {
+      await expect(auth.query("SELECT COUNT(*) AS total FROM users")).resolves.toBeDefined();
+      await expect(auth.query("SELECT COUNT(*) AS total FROM farms")).rejects.toMatchObject({
+        errno: 1142
+      });
+
+      await expect(market.query("SELECT COUNT(*) AS total FROM farms")).resolves.toBeDefined();
+      await expect(
+        market.query("SELECT email_ciphertext FROM user_private_contacts LIMIT 1")
+      ).rejects.toMatchObject({ errno: 1142 });
+      await expect(
+        market.query("UPDATE bid_versions SET observations = observations LIMIT 1")
+      ).rejects.toMatchObject({ errno: 1142 });
+      await expect(
+        market.query("UPDATE audit_events SET outcome = outcome LIMIT 1")
+      ).rejects.toMatchObject({ errno: 1142 });
+      await expect(
+        market.query("UPDATE audit_chain_heads SET current_hash = current_hash WHERE id = 1")
+      ).rejects.toMatchObject({ errno: 1142 });
+
+      await expect(auditWriter.query("SELECT * FROM audit_events LIMIT 1")).rejects.toMatchObject({
+        errno: 1142
+      });
+      await expect(
+        auditWriter.query(
+          "INSERT INTO audit_events (occurred_at, action_code, entity_type, outcome, request_id, previous_hash, event_hash) VALUES (NOW(3), 'FORGED_EVENT', 'SYSTEM', 'FAILED', UUID(), RANDOM_BYTES(32), RANDOM_BYTES(32))"
+        )
+      ).rejects.toBeDefined();
+
+      await expect(auditor.query("SELECT COUNT(*) AS total FROM audit_events")).resolves.toBeDefined();
+      await expect(
+        auditor.query("DELETE FROM audit_events WHERE 1 = 0")
+      ).rejects.toMatchObject({ errno: 1142 });
+    } finally {
+      await Promise.all([auth.end(), market.end(), auditWriter.end(), auditor.end()]);
+    }
   });
 });

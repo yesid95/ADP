@@ -1,5 +1,5 @@
 import type { BidStatus, Prisma } from "../../generated/prisma/client.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getMarketPrisma } from "../../infrastructure/database/prisma.js";
 import { AppError } from "../../shared/errors.js";
 import type { RequestContext } from "../../shared/request-context.js";
 import { inSerializableTransaction } from "../../shared/transaction.js";
@@ -56,7 +56,7 @@ type OwnBidRecord = Prisma.BidGetPayload<{ include: typeof OWN_BID_INCLUDE }>;
 async function loadOwnBid(
   buyerUserId: string,
   bidId: string,
-  client: BidReader = getPrisma()
+  client: BidReader = getMarketPrisma()
 ) {
   const bid = (await client.bid.findFirst({
     where: { id: bidId, buyerUserId },
@@ -80,7 +80,7 @@ async function loadOwnBid(
 }
 
 export async function listOwnBids(buyerUserId: string, page: BidPage) {
-  const rows = await getPrisma().bid.findMany({
+  const rows = await getMarketPrisma().bid.findMany({
     where: {
       buyerUserId,
       ...(page.status ? { status: page.status } : {})

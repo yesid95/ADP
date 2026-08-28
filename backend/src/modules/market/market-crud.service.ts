@@ -1,6 +1,6 @@
 import { Prisma } from "../../generated/prisma/client.js";
 import type { ListingStatus } from "../../generated/prisma/enums.js";
-import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { getMarketPrisma } from "../../infrastructure/database/prisma.js";
 import { AppError } from "../../shared/errors.js";
 import type { RequestContext } from "../../shared/request-context.js";
 import { inSerializableTransaction } from "../../shared/transaction.js";
@@ -70,7 +70,7 @@ function pageResult<T extends { id: string }>(rows: T[], limit: number) {
 }
 
 export async function listOwnFarms(ownerUserId: string, page: CursorPage) {
-  const rows = await getPrisma().farm.findMany({
+  const rows = await getMarketPrisma().farm.findMany({
     where: { ownerUserId, deletedAt: null },
     include: {
       municipality: {
@@ -87,7 +87,7 @@ export async function listOwnFarms(ownerUserId: string, page: CursorPage) {
 }
 
 export async function getOwnFarm(ownerUserId: string, farmId: string) {
-  const farm = await getPrisma().farm.findFirst({
+  const farm = await getMarketPrisma().farm.findFirst({
     where: { id: farmId, ownerUserId, deletedAt: null },
     include: {
       municipality: {
@@ -108,7 +108,7 @@ export async function updateFarm(
   input: FarmUpdateInput,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
   return prisma.$transaction(async (transaction) => {
     const farm = await transaction.farm.findFirst({
       where: { id: farmId, ownerUserId, deletedAt: null },
@@ -205,7 +205,7 @@ export async function listOwnListings(
   ownerUserId: string,
   page: CursorPage & { status?: ListingStatus | undefined }
 ) {
-  const rows = await getPrisma().harvestListing.findMany({
+  const rows = await getMarketPrisma().harvestListing.findMany({
     where: {
       farm: { ownerUserId },
       deletedAt: null,
@@ -229,7 +229,7 @@ export async function listOwnListings(
 }
 
 export async function getPublicListing(listingId: string) {
-  const listing = await getPrisma().harvestListing.findFirst({
+  const listing = await getMarketPrisma().harvestListing.findFirst({
     where: {
       id: listingId,
       status: "OPEN",
@@ -262,7 +262,7 @@ export async function getPublicListing(listingId: string) {
 }
 
 export async function listPublicListings(filters: PublicListingFilters) {
-  const rows = await getPrisma().harvestListing.findMany({
+  const rows = await getMarketPrisma().harvestListing.findMany({
     where: {
       status: "OPEN",
       bidDeadlineAt: { gt: new Date() },
@@ -323,7 +323,7 @@ export async function updateDraftListing(
   input: ListingUpdateInput,
   context: RequestContext
 ) {
-  const prisma = getPrisma();
+  const prisma = getMarketPrisma();
   return prisma.$transaction(async (transaction) => {
     const listing = await transaction.harvestListing.findFirst({
       where: { id: listingId, farm: { ownerUserId }, deletedAt: null },
