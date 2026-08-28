@@ -292,6 +292,21 @@ describe("MySQL 8.4 integration", () => {
     expect(revision.status).toBe(200);
     await expect(prisma.bidVersion.count({ where: { bidId: bidAId } })).resolves.toBe(2);
 
+    const ownBids = await request(app)
+      .get("/api/v1/me/bids?status=SUBMITTED&limit=10")
+      .set("Authorization", authorization(buyerA.accessToken));
+    expect(ownBids.status).toBe(200);
+    expect(ownBids.body.data.some(({ id }: { id: string }) => id === bidAId)).toBe(true);
+    const bidHistory = await request(app)
+      .get(`/api/v1/me/bids/${bidAId}`)
+      .set("Authorization", authorization(buyerA.accessToken));
+    expect(bidHistory.status).toBe(200);
+    expect(bidHistory.body.data.versions).toHaveLength(2);
+    const foreignBidHistory = await request(app)
+      .get(`/api/v1/me/bids/${bidAId}`)
+      .set("Authorization", authorization(buyerB.accessToken));
+    expect(foreignBidHistory.status).toBe(404);
+
     const comparison = await request(app)
       .get(`/api/v1/listings/${listingId}/bids`)
       .set("Authorization", authorization(farmer.accessToken));
@@ -374,6 +389,35 @@ describe("MySQL 8.4 integration", () => {
       .post(`/api/v1/listings/${closedListingId}/publish`)
       .set("Authorization", authorization(farmer.accessToken));
     expect(publishClosedListing.status).toBe(200);
+
+    const withdrawableBid = await request(app)
+      .post(`/api/v1/listings/${closedListingId}/bids`)
+      .set("Authorization", authorization(buyerA.accessToken))
+      .set("Idempotency-Key", `submit-withdraw-${runId}`)
+      .send({
+        unitPriceCopPerKg: "1725.00",
+        offeredQuantityKg: "1000.000",
+        transportIncluded: true,
+        pickupAtFarm: true,
+        sellerLogisticsCostCop: "0.00",
+        advanceAmountCop: "0.00",
+        paymentTermDays: 2
+      });
+    expect(withdrawableBid.status).toBe(201);
+    const withdrawableBidId = withdrawableBid.body.data.id as string;
+    const withdrawalKey = `withdraw-${runId}`;
+    const withdrawal = await request(app)
+      .post(`/api/v1/bids/${withdrawableBidId}/withdraw`)
+      .set("Authorization", authorization(buyerA.accessToken))
+      .set("Idempotency-Key", withdrawalKey);
+    expect(withdrawal.status).toBe(200);
+    expect(withdrawal.body.data.status).toBe("WITHDRAWN");
+    const withdrawalRetry = await request(app)
+      .post(`/api/v1/bids/${withdrawableBidId}/withdraw`)
+      .set("Authorization", authorization(buyerA.accessToken))
+      .set("Idempotency-Key", withdrawalKey);
+    expect(withdrawalRetry.status).toBe(200);
+
     const closeListingResponse = await request(app)
       .post(`/api/v1/listings/${closedListingId}/close`)
       .set("Authorization", authorization(farmer.accessToken));

@@ -10,6 +10,11 @@ import {
   reviseBid,
   submitBid
 } from "./bid.service.js";
+import {
+  getOwnBidHistory,
+  listOwnBids,
+  withdrawBid
+} from "./bid-crud.service.js";
 
 const uuidSchema = z.uuid();
 const quantity = z.string().regex(/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/);
@@ -27,9 +32,37 @@ const bidTermsSchema = z.object({
   continuityNotes: z.string().trim().max(500).optional(),
   observations: z.string().trim().max(2_000).optional()
 });
+const bidPageSchema = z.object({
+  cursor: uuidSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z
+    .enum(["SUBMITTED", "WITHDRAWN", "ACCEPTED", "REJECTED", "EXPIRED"])
+    .optional()
+});
 
 export function createBidRouter(): Router {
   const router = Router();
+
+  router.get(
+    "/me/bids",
+    authenticate,
+    requireRole("BUYER"),
+    async (request, response) => {
+      const actor = requireActor(request);
+      response.json(await listOwnBids(actor.userId, bidPageSchema.parse(request.query)));
+    }
+  );
+
+  router.get(
+    "/me/bids/:bidId",
+    authenticate,
+    requireRole("BUYER"),
+    async (request, response) => {
+      const actor = requireActor(request);
+      const { bidId } = z.object({ bidId: uuidSchema }).parse(request.params);
+      response.json({ data: await getOwnBidHistory(actor.userId, bidId) });
+    }
+  );
 
   router.post(
     "/listings/:listingId/bids",
@@ -65,6 +98,24 @@ export function createBidRouter(): Router {
         getRequestContext(request)
       );
       response.json({ data: bid });
+    }
+  );
+
+  router.post(
+    "/bids/:bidId/withdraw",
+    authenticate,
+    requireRole("BUYER"),
+    async (request, response) => {
+      const actor = requireActor(request);
+      const { bidId } = z.object({ bidId: uuidSchema }).parse(request.params);
+      response.json({
+        data: await withdrawBid(
+          actor.userId,
+          bidId,
+          readIdempotencyKey(request.headers),
+          getRequestContext(request)
+        )
+      });
     }
   );
 
