@@ -1,14 +1,14 @@
-# ADP - Asociacion de Plataneros
+# ADP - Asociación de Plataneros
 
-**ADP**, por **Asociacion de Plataneros**, es una plataforma comercial con IA para que finqueros publiquen cosechas de platano y reciban pujas anonimas de compradores, distribuidores o aliados logisticos.
+**ADP**, por **Asociación de Plataneros**, es una plataforma comercial con IA para que finqueros publiquen cosechas de plátano y reciban pujas anónimas de compradores, distribuidores o aliados logísticos.
 
 La propuesta busca resolver un problema simple pero fuerte: el productor no siempre necesita la oferta mas alta, sino la oferta que mas le conviene en valor real, considerando precio, transporte, anticipo, recoleccion, tiempo de pago, compra total y continuidad comercial.
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 - Demo navegable.
+**Fase actual:** Fase 1 - Demo navegable terminada.
 
-La primera demo ya esta implementada como una aplicacion **React + Vite** con datos simulados. Permite revisar el flujo principal del producto:
+La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
 ```text
 Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> finquero acepta -> cierre por WhatsApp
@@ -16,15 +16,16 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 
 ### Implementado en Fase 1
 
-- Pantalla de perfil de finca.
-- Publicacion de cosecha de platano harton.
-- Asistente simulado para mejorar el texto comercial de la publicacion.
-- Busqueda/mercado con compradores sugeridos.
-- Tres pujas anonimas con condiciones diferentes.
-- Comparador visual de precio bruto, valor neto, transporte, anticipo y plazo de pago.
-- Recomendacion IA simulada para elegir por valor total.
-- Accion para aceptar una puja.
-- Enlace de cierre por WhatsApp.
+- Perfil de finca con fotografías locales de cultivo de plátano hartón.
+- Formulario validado de publicación con carga temporal de fotografías.
+- Asistente simulado que genera un texto comercial usando los datos del formulario.
+- Vista pública de la cosecha y recorrido guiado hacia mercado y pujas.
+- Compradores sugeridos y tres pujas anónimas con condiciones diferentes.
+- Comparador de precio bruto, valor neto, transporte, anticipo y plazo de pago.
+- Recomendación IA simulada para elegir por valor total.
+- Confirmación de una única puja, bloqueo del proceso y revelación del comprador ganador.
+- Cierre por WhatsApp con mensaje dinámico y destinatario opcional por entorno.
+- Acción para reiniciar y repetir la demo.
 
 ### Pendiente para Fase 2
 
@@ -69,10 +70,42 @@ Luego abrir:
 http://127.0.0.1:5173
 ```
 
+### WhatsApp opcional
+
+Copia `.env.example` como `.env` y define el número en formato internacional, solo con dígitos:
+
+```env
+VITE_WHATSAPP_NUMBER=573001112233
+```
+
+Si la variable queda vacía, WhatsApp abre el mensaje precargado sin seleccionar destinatario.
+
 ### Compilar para produccion
 
 ```bash
 npm run build
+```
+
+### Verificación
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Las pruebas cubren el bloqueo previo a la publicación, la mejora de texto, la carga temporal de imágenes, la publicación, la habilitación de compradores y pujas, la aceptación única, la revelación del ganador, WhatsApp y el reinicio de la demo.
+
+### Estructura actual
+
+```text
+src/App.jsx              Orquestación y estado de la demo
+src/components/          Formulario, perfil, mercado, pujas y confirmación
+src/data/                Datos simulados de finca, compradores y ofertas
+src/lib/                 Validación, formato, IA simulada y WhatsApp
+src/App.test.jsx         Pruebas de interacción
+public/assets/           Fotografías locales de plátano hartón
+docs/fase-1-demo.md      Estado y límites de la Fase 1
 ```
 
 ### Vista previa de produccion
@@ -80,29 +113,6 @@ npm run build
 ```bash
 npm run preview
 ```
-
-## Nota de instalacion local
-
-Durante la implementacion, la instalacion de dependencias en esta maquina fallo por verificacion de certificado contra el registro de npm:
-
-```text
-UNABLE_TO_VERIFY_LEAF_SIGNATURE
-```
-
-Si aparece el mismo problema, se puede probar temporalmente:
-
-```bash
-npm install --strict-ssl=false
-```
-
-o:
-
-```bash
-pnpm config set strict-ssl false
-pnpm install
-```
-
-Esa configuracion debe usarse solo si la red local o el certificado corporativo bloquea la descarga normal de dependencias.
 
 ## Concepto
 

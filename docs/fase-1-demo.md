@@ -1,53 +1,53 @@
-# Fase 1 - Demo navegable implementada
+# Fase 1 - Demo navegable terminada
 
 ## Estado
 
-La Fase 1 ya cuenta con una primera demo React/Vite en la raiz del proyecto.
+La Fase 1 cuenta con una demo React/Vite funcional, responsive y verificable con pruebas automáticas. Los datos, compradores, pujas e identidades son simulados y viven únicamente durante la sesión.
 
-## Alcance implementado
+## Recorrido implementado
 
-- Interfaz mobile-first.
-- Navegacion por secciones: finca, cosecha, mercado y pujas.
-- Perfil de finca platanera con datos simulados.
-- Publicacion de cosecha de platano harton.
-- Asistente simulado para mejorar el texto comercial de la publicacion.
-- Compradores sugeridos por zona y necesidad.
-- Tres pujas anonimas con condiciones diferentes.
-- Comparador visual de precio bruto, valor neto, transporte, anticipo y plazo de pago.
-- Recomendacion IA simulada para explicar la mejor puja.
-- Aceptacion de una puja.
-- Enlace de cierre por WhatsApp.
+1. Ver el perfil de Finca La Esperanza.
+2. Completar y validar los datos de una cosecha de plátano hartón.
+3. Cargar hasta tres fotografías temporales o utilizar los activos locales de demostración.
+4. Generar y aplicar un texto comercial mediante IA simulada.
+5. Publicar la cosecha y revisar su vista pública.
+6. Consultar tres compradores sugeridos y tres pujas anónimas.
+7. Comparar precio bruto, valor neto, transporte, anticipo y plazo de pago.
+8. Confirmar una puja, bloquear las demás y revelar únicamente al comprador ganador.
+9. Abrir WhatsApp con un mensaje de cierre generado para la oferta seleccionada.
+10. Reiniciar el estado para repetir la presentación.
 
-## Archivos principales
+## Imágenes
 
-- `package.json`
-- `vite.config.js`
-- `index.html`
-- `src/main.jsx`
-- `src/App.jsx`
-- `src/styles.css`
+Las fotografías anteriores de bananos fueron reemplazadas por tres activos locales generados específicamente para mostrar plátano hartón verde:
 
-## Pendiente tecnico
+- cultivo platanero en Casanare;
+- racimo recién cosechado;
+- lote clasificado y listo para cargue.
 
-La instalacion de dependencias con `npm install` presento problemas de descarga en el entorno local por verificacion de certificado del registro npm y luego quedo sin progreso visible. El codigo fuente de la demo queda preparado para validarse cuando npm pueda instalar dependencias correctamente.
+La carga de imágenes del formulario usa URLs temporales del navegador y no persiste archivos, comportamiento intencional para esta fase sin backend.
 
-## Como ejecutar
+## WhatsApp
 
-Cuando las dependencias esten instaladas:
+El destinatario se configura opcionalmente mediante `VITE_WHATSAPP_NUMBER`, usando formato internacional sin el signo `+`. Si la variable no existe, se abre WhatsApp con el mensaje precargado y sin destinatario.
+
+## Ejecutar y verificar
 
 ```bash
 npm install
 npm run dev
 ```
 
-Luego abrir:
+La aplicación queda disponible en `http://127.0.0.1:5173`.
 
-```text
-http://127.0.0.1:5173
+Los criterios técnicos se validan con:
+
+```bash
+npm run lint
+npm test
+npm run build
 ```
 
-## Criterio de revision
+## Límite de la fase
 
-La demo debe permitir contar esta historia:
-
-> Una finca de Casanare publica 2.5 toneladas de platano harton. Tres compradores hacen pujas anonimas. La IA muestra que la mejor oferta no siempre es la de mayor precio bruto, sino la de mayor valor neto y menor riesgo para el productor.
+No se incluyen backend, base de datos, autenticación, persistencia, pujas en tiempo real ni integración con un servicio de IA. Esos elementos pertenecen a las fases posteriores del roadmap.

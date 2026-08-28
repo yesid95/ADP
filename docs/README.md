@@ -2,13 +2,13 @@
 
 Este espacio reune los documentos base, diagramas y decisiones de exploracion para **ADP - Asociacion de Plataneros**, propuesta del reto **Casanare Diversifica: agentes de IA para la cadena productiva y cultural del Llano**.
 
-## Estructura inicial
+## Estructura actual
 
 - `../README.md`: nota principal del proyecto y resumen ejecutivo de la idea seleccionada.
 - `../CONTRIBUTING.md`: guia de colaboracion del equipo y flujo de ramas.
 - `../docs/git-workflow.md`: configuracion Git/GitHub recomendada para versionar ADP.
 - `../docs/roadmap.md`: roadmap por fases para organizar el desarrollo del proyecto.
-- `../docs/fase-1-demo.md`: nota de implementacion de la primera demo navegable.
+- `../docs/fase-1-demo.md`: estado verificado, recorrido y límites de la Fase 1 terminada.
 - `llano/cadenas-productivas-culturales.md`: mapa inicial de cadenas productivas y culturales no petroleras del Llano, con oportunidades para IA y trazabilidad.
 - `llano/propuestas-rubrica.md`: propuestas evaluadas contra la rubrica y recomendacion principal para prototipo.
 - `llano/modelo-negocio-pasaporte-vivo.md`: modelo comercial de la propuesta, con pagadores, compradores, precios y flujos de dinero.

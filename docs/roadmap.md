@@ -10,6 +10,14 @@ El principio central es construir primero el ciclo comercial completo:
 Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> cierre por WhatsApp
 ```
 
+## Estado actual
+
+| Fase | Estado | Resultado |
+|---|---|---|
+| Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
+| Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
+| Fase 2 | Siguiente | Backend, persistencia, autenticación y reglas reales de negocio |
+
 ## Fase 0 - Preparacion del proyecto
 
 **Objetivo:** dejar el proyecto listo para trabajar en equipo.
@@ -40,7 +48,7 @@ El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a
 
 **Objetivo:** construir una maqueta funcional para presentar la idea con claridad.
 
-**Estado:** implementada como primera demo React/Vite. Ver `docs/fase-1-demo.md`.
+**Estado:** terminada y verificada como demo React/Vite. Ver `docs/fase-1-demo.md`.
 
 ### Alcance
 
@@ -52,6 +60,10 @@ El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a
 - Tres pujas de ejemplo.
 - Comparador visual de pujas.
 - Pantalla de aceptacion de puja.
+- Asistente de redacción simulado.
+- Fotografías locales de plátano hartón y carga temporal de imágenes.
+- Revelación del comprador ganador y cierre por WhatsApp.
+- Pruebas automáticas del recorrido principal.
 
 ### Modulos
 
@@ -62,7 +74,7 @@ El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a
 - Bandeja de pujas anonimas.
 - Comparador de valor total.
 
-### Criterio de salida
+### Criterio de salida alcanzado
 
 Se puede hacer una demo de 3 minutos:
 
@@ -71,6 +83,8 @@ Se puede hacer una demo de 3 minutos:
 3. Recibir tres pujas anonimas.
 4. Comparar precio, transporte, anticipo y plazo de pago.
 5. Elegir la mejor oferta.
+6. Confirmar la aceptación y revelar al comprador ganador.
+7. Abrir WhatsApp con el mensaje de cierre precargado.
 
 ## Fase 2 - MVP tecnico
 
@@ -238,56 +252,58 @@ La plataforma puede orientar al productor con referencias de mercado basadas en 
 
 ADP puede operar como plataforma para una asociacion, feria agricola, programa municipal o red de productores.
 
-## Prioridad recomendada
+## Prioridad recomendada desde el estado actual
 
 | Prioridad | Fase | Razon |
 |---:|---|---|
-| 1 | Fase 1 | Permite presentar rapido la idea |
-| 2 | Fase 2 | Da base tecnica real |
-| 3 | Fase 3 | Hace creible el sistema de pujas |
-| 4 | Fase 4 | Cumple el componente IA de la actividad |
-| 5 | Fase 5 | Conecta con negocio real |
-| 6 | Fase 6 | Valida con usuarios |
-| 7 | Fase 7 | Agrega inteligencia con datos |
-| 8 | Fase 8 | Escala el modelo |
+| 1 | Fase 2 | Da base técnica real y persistencia a la demo validada |
+| 2 | Fase 3 | Hace confiable el sistema de pujas en vivo |
+| 3 | Fase 4 | Integra IA comercial real |
+| 4 | Fase 5 | Conecta la decisión con reputación y cierre comercial |
+| 5 | Fase 6 | Valida el producto con usuarios |
+| 6 | Fase 7 | Agrega inteligencia basada en datos |
+| 7 | Fase 8 | Escala el modelo |
 
 ## Backlog inicial por roles
 
 ### Frontend
 
-- Crear estructura React + Vite.
-- Disenar layout mobile-first.
-- Crear pantallas de finquero.
-- Crear vista de publicacion.
-- Crear bandeja de pujas.
-- Crear comparador visual.
+- [x] Crear estructura React + Vite.
+- [x] Diseñar layout mobile-first.
+- [x] Crear pantalla de perfil de finca.
+- [x] Crear formulario y vista pública de la cosecha.
+- [x] Crear mercado de compradores sugeridos.
+- [x] Crear bandeja y comparador visual de pujas.
+- [x] Implementar aceptación única, revelación y WhatsApp.
+- [x] Añadir pruebas de interacción y activos locales de plátano.
 
 ### Backend
 
-- Crear API Node.js + Express.
-- Configurar Prisma + MySQL.
-- Definir modelos.
-- Implementar autenticacion.
-- Implementar reglas de puja.
-- Implementar endpoint de aceptacion.
+- [ ] Crear API Node.js + Express.
+- [ ] Configurar Prisma + MySQL.
+- [ ] Definir modelos.
+- [ ] Implementar autenticación.
+- [ ] Implementar reglas de puja.
+- [ ] Implementar endpoint de aceptación.
 
 ### IA
 
-- Definir prompts de mejora de publicacion.
-- Definir prompt de comparacion de pujas.
-- Crear servicio backend para IA.
-- Evitar que la IA invente datos no registrados.
+- [x] Implementar simulación determinista de mejora de publicación.
+- [x] Implementar recomendación simulada de la mejor oferta.
+- [ ] Definir prompts para la integración real.
+- [ ] Crear servicio backend para IA.
+- [ ] Evitar que la IA invente datos no registrados.
 
 ### Producto/documentacion
 
-- Preparar pitch.
-- Preparar demo de tres pujas.
-- Definir caso piloto.
-- Documentar decisiones tecnicas.
-- Preparar matriz de rubrica.
+- [ ] Preparar pitch.
+- [x] Preparar demo de tres pujas.
+- [ ] Definir caso piloto.
+- [x] Documentar estado y decisiones técnicas de la Fase 1.
+- [ ] Preparar matriz de rúbrica.
 
-## Version de demo esperada
+## Versión de demo implementada
 
-La primera demo debe contar esta historia:
+La demo actual cuenta esta historia:
 
-> Una finca en Casanare tiene 2.5 toneladas de platano harton listas para cosechar. El finquero publica la oferta con ayuda de IA. Tres compradores hacen pujas anonimas. La IA compara las condiciones y muestra que la mejor decision no es necesariamente la oferta mas alta, sino la que deja mejor valor neto y menor riesgo. El finquero acepta la puja y cierra por WhatsApp.
+> Una finca en Casanare tiene 2.5 toneladas de plátano hartón listas para cosechar. El finquero publica la oferta con ayuda de IA simulada. Tres compradores hacen pujas anónimas. El comparador muestra que la mejor decisión no es necesariamente la oferta más alta, sino la de mejores condiciones y menor riesgo. El finquero confirma la puja, conoce al comprador ganador y abre el cierre por WhatsApp.
