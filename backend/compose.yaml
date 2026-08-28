@@ -39,5 +39,14 @@ services:
       retries: 20
       start_period: 20s
 
+  mysql-tools:
+    build:
+      context: .
+      dockerfile: database/operations/mysql-tools.Dockerfile
+    profiles: ["operations"]
+    network_mode: none
+    volumes:
+      - adp_mysql_data:/var/lib/mysql:ro
+
 volumes:
   adp_mysql_data:

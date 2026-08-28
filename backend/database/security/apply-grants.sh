@@ -126,6 +126,7 @@ GRANT SELECT ON adp.audit_events TO 'adp_auditor'@'%';
 GRANT SELECT ON adp.audit_chain_heads TO 'adp_auditor'@'%';
 GRANT ALL PRIVILEGES ON adp.* TO 'adp_migrator'@'%';
 GRANT SELECT, SHOW VIEW, TRIGGER, EVENT, LOCK TABLES ON adp.* TO 'adp_backup'@'%';
+GRANT RELOAD, REPLICATION CLIENT, SHOW_ROUTINE ON *.* TO 'adp_backup'@'%';
 
 FLUSH PRIVILEGES;
 SQL

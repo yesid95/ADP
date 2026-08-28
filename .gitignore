@@ -42,3 +42,6 @@ temp/
 
 # Local browser QA evidence (may contain session state)
 dogfood-output/
+
+# Local operational evidence and encrypted backup artifacts
+backend/var/
