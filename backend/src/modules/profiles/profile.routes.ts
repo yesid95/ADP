@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { authenticate, requireActor, requireRole } from "../../middleware/auth.js";
 import { getRequestContext } from "../../shared/request-context.js";
+import { changePassword } from "../auth/auth.service.js";
 import {
   deleteOwnAccount,
   getOwnProfile,
@@ -52,6 +53,10 @@ const buyerInterestsSchema = z.object({
     .array(z.number().int().positive().max(65_535))
     .max(100)
     .refine((items) => new Set(items).size === items.length, "Municipalities must be unique")
+});
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1).max(128),
+  newPassword: z.string().min(12).max(128)
 });
 
 export function createProfileRouter(): Router {
@@ -128,6 +133,18 @@ export function createProfileRouter(): Router {
   router.delete("/me", authenticate, async (request, response) => {
     const actor = requireActor(request);
     await deleteOwnAccount(actor.userId, getRequestContext(request));
+    response.status(204).send();
+  });
+
+  router.post("/me/password", authenticate, async (request, response) => {
+    const actor = requireActor(request);
+    const input = changePasswordSchema.parse(request.body);
+    await changePassword(
+      actor.userId,
+      input.currentPassword,
+      input.newPassword,
+      getRequestContext(request)
+    );
     response.status(204).send();
   });
 

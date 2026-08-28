@@ -5,8 +5,11 @@ import { getRequestContext } from "../../shared/request-context.js";
 import {
   loginUser,
   logoutSession,
+  requestPasswordReset,
   refreshSession,
   registerUser,
+  resendEmailVerification,
+  resetPassword,
   verifyEmail
 } from "./auth.service.js";
 
@@ -41,6 +44,12 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(32).max(512)
 });
 
+const emailSchema = z.object({ email: z.email().max(254) });
+const resetPasswordSchema = z.object({
+  token: z.string().min(32).max(512),
+  newPassword: z.string().min(12).max(128)
+});
+
 export function createAuthRouter(): Router {
   const router = Router();
   const limiter = rateLimit({
@@ -63,6 +72,24 @@ export function createAuthRouter(): Router {
   router.post("/verify-email", async (request, response) => {
     const { token } = tokenSchema.parse(request.body);
     await verifyEmail(token, getRequestContext(request));
+    response.status(204).send();
+  });
+
+  router.post("/resend-verification", async (request, response) => {
+    const { email } = emailSchema.parse(request.body);
+    await resendEmailVerification(email, getRequestContext(request));
+    response.status(204).send();
+  });
+
+  router.post("/request-password-reset", async (request, response) => {
+    const { email } = emailSchema.parse(request.body);
+    const result = await requestPasswordReset(email, getRequestContext(request));
+    response.status(202).json({ accepted: true, ...result });
+  });
+
+  router.post("/reset-password", async (request, response) => {
+    const input = resetPasswordSchema.parse(request.body);
+    await resetPassword(input.token, input.newPassword, getRequestContext(request));
     response.status(204).send();
   });
 

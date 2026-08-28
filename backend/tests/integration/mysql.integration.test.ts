@@ -13,6 +13,8 @@ interface TestAccount {
   phone: string;
   displayName: string;
   accessToken: string;
+  refreshToken: string;
+  password: string;
 }
 
 const app = createApp();
@@ -68,7 +70,9 @@ async function createVerifiedAccount(
     email,
     phone,
     displayName,
-    accessToken: login.body.accessToken
+    accessToken: login.body.accessToken,
+    refreshToken: login.body.refreshToken,
+    password
   };
 }
 
@@ -484,6 +488,61 @@ describe("MySQL 8.4 integration", () => {
       .delete(`/api/v1/farms/${farmId}`)
       .set("Authorization", authorization(farmer.accessToken));
     expect(archiveFarmResponse.status).toBe(204);
+
+    const unknownReset = await request(app)
+      .post("/api/v1/auth/request-password-reset")
+      .send({ email: `missing.${runId}@example.test` });
+    expect(unknownReset.status).toBe(202);
+    expect(unknownReset.body).toEqual({ accepted: true });
+
+    const resetRequest = await request(app)
+      .post("/api/v1/auth/request-password-reset")
+      .send({ email: buyerB.email });
+    expect(resetRequest.status).toBe(202);
+    expect(resetRequest.body.resetToken).toBeTypeOf("string");
+    const resetPasswordValue = "Reset-Integration-Password-2026!";
+    const passwordReset = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .send({ token: resetRequest.body.resetToken, newPassword: resetPasswordValue });
+    expect(passwordReset.status).toBe(204);
+    const resetTokenReuse = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .send({ token: resetRequest.body.resetToken, newPassword: "Another-Password-2026!" });
+    expect(resetTokenReuse.status).toBe(400);
+    const revokedAfterReset = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(buyerB.accessToken));
+    expect(revokedAfterReset.status).toBe(401);
+    const oldPasswordLogin = await request(app).post("/api/v1/auth/login").send({
+      email: buyerB.email,
+      password: buyerB.password
+    });
+    expect(oldPasswordLogin.status).toBe(401);
+    const resetLogin = await request(app).post("/api/v1/auth/login").send({
+      email: buyerB.email,
+      password: resetPasswordValue
+    });
+    expect(resetLogin.status).toBe(200);
+    buyerB.accessToken = resetLogin.body.accessToken;
+
+    const changedPasswordValue = "Changed-Integration-Password-2026!";
+    const passwordChange = await request(app)
+      .post("/api/v1/me/password")
+      .set("Authorization", authorization(buyerA.accessToken))
+      .send({
+        currentPassword: buyerA.password,
+        newPassword: changedPasswordValue
+      });
+    expect(passwordChange.status).toBe(204);
+    const revokedAfterChange = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(buyerA.accessToken));
+    expect(revokedAfterChange.status).toBe(401);
+    const changedLogin = await request(app).post("/api/v1/auth/login").send({
+      email: buyerA.email,
+      password: changedPasswordValue
+    });
+    expect(changedLogin.status).toBe(200);
 
     const deleteBuyer = await request(app)
       .delete("/api/v1/me")

@@ -3,6 +3,7 @@ import { Prisma } from "../../generated/prisma/client.js";
 import type { BuyerType, RoleCode } from "../../generated/prisma/enums.js";
 import { getEnv } from "../../config/env.js";
 import { getPrisma } from "../../infrastructure/database/prisma.js";
+import { sendTransactionalMail } from "../../infrastructure/mail/mailer.js";
 import { writeAudit } from "../audit/audit.service.js";
 import {
   encryptField,
@@ -34,6 +35,20 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+async function deliverTransactionalMail(
+  mail: Parameters<typeof sendTransactionalMail>[0]
+): Promise<void> {
+  try {
+    await sendTransactionalMail(mail);
+  } catch {
+    throw new AppError(
+      503,
+      "MAIL_DELIVERY_UNAVAILABLE",
+      "The account action was saved, but email delivery is temporarily unavailable"
+    );
+  }
 }
 
 export interface TokenPair {
@@ -171,6 +186,8 @@ export async function registerUser(
     return created;
   });
 
+  await deliverTransactionalMail({ kind: "verify-email", to: email, token: verificationToken });
+
   return {
     user: {
       id: user.id,
@@ -180,6 +197,53 @@ export async function registerUser(
     },
     ...(env.NODE_ENV === "production" ? {} : { verificationToken })
   };
+}
+
+export async function resendEmailVerification(
+  rawEmail: string,
+  context: RequestContext
+): Promise<void> {
+  const prisma = getPrisma();
+  const env = getEnv();
+  const email = normalizeEmail(rawEmail);
+  const contact = await prisma.userPrivateContact.findUnique({
+    where: { emailLookupHash: hmacSha256(email, env.CONTACT_LOOKUP_KEY_BASE64) },
+    include: { user: { select: { status: true } } }
+  });
+
+  if (!contact || contact.emailVerifiedAt || contact.user.status !== "PENDING") {
+    return;
+  }
+
+  const token = randomToken();
+  await prisma.$transaction(async (transaction) => {
+    await transaction.authToken.updateMany({
+      where: {
+        userId: contact.userId,
+        purpose: "VERIFY_EMAIL",
+        usedAt: null
+      },
+      data: { usedAt: new Date() }
+    });
+    await transaction.authToken.create({
+      data: {
+        userId: contact.userId,
+        purpose: "VERIFY_EMAIL",
+        tokenHash: sha256(token),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1_000)
+      }
+    });
+    await writeAudit(transaction, {
+      actorUserId: contact.userId,
+      actionCode: "AUTH_RESEND_VERIFICATION",
+      entityType: "USER",
+      entityId: contact.userId,
+      outcome: "SUCCESS",
+      requestId: context.requestId,
+      ipHash: context.ipHash
+    });
+  });
+  await deliverTransactionalMail({ kind: "verify-email", to: email, token });
 }
 
 export async function verifyEmail(token: string, context: RequestContext): Promise<void> {
@@ -222,6 +286,147 @@ export async function verifyEmail(token: string, context: RequestContext): Promi
       actionCode: "AUTH_VERIFY_EMAIL",
       entityType: "USER",
       entityId: record.userId,
+      outcome: "SUCCESS",
+      requestId: context.requestId,
+      ipHash: context.ipHash
+    });
+  });
+}
+
+export async function requestPasswordReset(
+  rawEmail: string,
+  context: RequestContext
+): Promise<{ resetToken?: string }> {
+  const prisma = getPrisma();
+  const env = getEnv();
+  const email = normalizeEmail(rawEmail);
+  const contact = await prisma.userPrivateContact.findUnique({
+    where: { emailLookupHash: hmacSha256(email, env.CONTACT_LOOKUP_KEY_BASE64) },
+    include: { user: { select: { status: true } } }
+  });
+
+  if (!contact || contact.user.status !== "ACTIVE") {
+    return {};
+  }
+
+  const token = randomToken();
+  await prisma.$transaction(async (transaction) => {
+    await transaction.authToken.updateMany({
+      where: {
+        userId: contact.userId,
+        purpose: "RESET_PASSWORD",
+        usedAt: null
+      },
+      data: { usedAt: new Date() }
+    });
+    await transaction.authToken.create({
+      data: {
+        userId: contact.userId,
+        purpose: "RESET_PASSWORD",
+        tokenHash: sha256(token),
+        expiresAt: new Date(Date.now() + 60 * 60 * 1_000)
+      }
+    });
+    await writeAudit(transaction, {
+      actorUserId: contact.userId,
+      actionCode: "AUTH_REQUEST_PASSWORD_RESET",
+      entityType: "USER",
+      entityId: contact.userId,
+      outcome: "SUCCESS",
+      requestId: context.requestId,
+      ipHash: context.ipHash
+    });
+  });
+  await deliverTransactionalMail({ kind: "reset-password", to: email, token });
+  return env.NODE_ENV === "production" ? {} : { resetToken: token };
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+  context: RequestContext
+): Promise<void> {
+  const prisma = getPrisma();
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.$transaction(async (transaction) => {
+    const record = await transaction.authToken.findUnique({
+      where: { tokenHash: sha256(token) },
+      select: { id: true, userId: true, purpose: true, usedAt: true, expiresAt: true }
+    });
+    if (
+      !record ||
+      record.purpose !== "RESET_PASSWORD" ||
+      record.usedAt ||
+      record.expiresAt <= new Date()
+    ) {
+      throw new AppError(400, "TOKEN_INVALID", "The password reset token is invalid or expired");
+    }
+    const consumed = await transaction.authToken.updateMany({
+      where: { id: record.id, usedAt: null },
+      data: { usedAt: new Date() }
+    });
+    if (consumed.count !== 1) {
+      throw new AppError(409, "TOKEN_ALREADY_USED", "The reset token was already used");
+    }
+    await transaction.passwordCredential.update({
+      where: { userId: record.userId },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        failedLoginCount: 0,
+        lockedUntil: null
+      }
+    });
+    await transaction.authSession.updateMany({
+      where: { userId: record.userId, revokedAt: null },
+      data: { revokedAt: new Date() }
+    });
+    await writeAudit(transaction, {
+      actorUserId: record.userId,
+      actionCode: "AUTH_RESET_PASSWORD",
+      entityType: "USER",
+      entityId: record.userId,
+      outcome: "SUCCESS",
+      requestId: context.requestId,
+      ipHash: context.ipHash
+    });
+  });
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+  context: RequestContext
+): Promise<void> {
+  const prisma = getPrisma();
+  const credential = await prisma.passwordCredential.findUnique({ where: { userId } });
+  if (!credential || !(await verifyPassword(credential.passwordHash, currentPassword))) {
+    throw new AppError(401, "CURRENT_PASSWORD_INVALID", "The current password is incorrect");
+  }
+  if (await verifyPassword(credential.passwordHash, newPassword)) {
+    throw new AppError(422, "PASSWORD_REUSED", "The new password must be different");
+  }
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.$transaction(async (transaction) => {
+    await transaction.passwordCredential.update({
+      where: { userId },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+        failedLoginCount: 0,
+        lockedUntil: null
+      }
+    });
+    await transaction.authSession.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() }
+    });
+    await writeAudit(transaction, {
+      actorUserId: userId,
+      actionCode: "AUTH_CHANGE_PASSWORD",
+      entityType: "USER",
+      entityId: userId,
       outcome: "SUCCESS",
       requestId: context.requestId,
       ipHash: context.ipHash

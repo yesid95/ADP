@@ -51,8 +51,40 @@ const envSchema = z.object({
   CONTACT_ENCRYPTION_KEY_BASE64: base64Key,
   CONTACT_LOOKUP_KEY_BASE64: base64Key,
   AUDIT_HMAC_KEY_BASE64: base64Key,
+  MFA_ENCRYPTION_KEY_BASE64: base64Key,
   ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
-  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30)
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+  MAIL_MODE: z.enum(["token", "smtp"]).default("token"),
+  APP_PUBLIC_URL: z.url().default("http://127.0.0.1:5173"),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65_535).default(587),
+  SMTP_SECURE: booleanFromString,
+  SMTP_REQUIRE_TLS: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  SMTP_FROM: z.string().min(3).optional()
+}).superRefine((env, context) => {
+  if (env.NODE_ENV === "production" && env.MAIL_MODE !== "smtp") {
+    context.addIssue({
+      code: "custom",
+      path: ["MAIL_MODE"],
+      message: "must be smtp in production"
+    });
+  }
+  if (env.MAIL_MODE === "smtp") {
+    for (const field of ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM"] as const) {
+      if (!env[field]) {
+        context.addIssue({
+          code: "custom",
+          path: [field],
+          message: "is required when MAIL_MODE=smtp"
+        });
+      }
+    }
+  }
 });
 
 export type AppEnv = z.infer<typeof envSchema>;
