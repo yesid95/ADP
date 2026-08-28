@@ -6,13 +6,15 @@ describe("access tokens", () => {
     const token = await signAccessToken({
       userId: "00000000-0000-4000-8000-000000000001",
       sessionId: "00000000-0000-4000-8000-000000000002",
-      roles: ["FARMER"]
+      roles: ["FARMER"],
+      mfaVerified: false
     });
     const claims = await verifyAccessToken(token);
     expect(claims).toEqual({
       userId: "00000000-0000-4000-8000-000000000001",
       sessionId: "00000000-0000-4000-8000-000000000002",
-      roles: ["FARMER"]
+      roles: ["FARMER"],
+      mfaVerified: false
     });
     expect(token).not.toContain("productor@ejemplo.com");
   });

@@ -109,3 +109,7 @@ export function contactFieldAad(
 ): string {
   return "user_private_contacts:" + userId + ":" + field + ":" + keyVersion;
 }
+
+export function mfaSecretAad(factorId: string, keyVersion: number): string {
+  return "mfa_factors:" + factorId + ":secret:" + keyVersion;
+}

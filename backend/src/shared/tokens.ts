@@ -9,11 +9,12 @@ export interface AccessTokenClaims {
   userId: string;
   sessionId: string;
   roles: RoleCode[];
+  mfaVerified: boolean;
 }
 
 export async function signAccessToken(claims: AccessTokenClaims): Promise<string> {
   const env = getEnv();
-  return new SignJWT({ roles: claims.roles })
+  return new SignJWT({ roles: claims.roles, mfa: claims.mfaVerified })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(claims.userId)
     .setJti(claims.sessionId)
@@ -32,13 +33,19 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenClaim
     algorithms: ["HS256"]
   });
 
-  if (!payload.sub || !payload.jti || !Array.isArray(payload.roles)) {
+  if (
+    !payload.sub ||
+    !payload.jti ||
+    !Array.isArray(payload.roles) ||
+    typeof payload.mfa !== "boolean"
+  ) {
     throw new Error("Token claims are incomplete");
   }
 
   return {
     userId: payload.sub,
     sessionId: payload.jti,
-    roles: payload.roles as RoleCode[]
+    roles: payload.roles as RoleCode[],
+    mfaVerified: payload.mfa
   };
 }

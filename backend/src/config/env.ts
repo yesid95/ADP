@@ -52,6 +52,7 @@ const envSchema = z.object({
   CONTACT_LOOKUP_KEY_BASE64: base64Key,
   AUDIT_HMAC_KEY_BASE64: base64Key,
   MFA_ENCRYPTION_KEY_BASE64: base64Key,
+  MFA_SESSION_TTL_HOURS: z.coerce.number().int().min(1).max(24).default(12),
   ACCESS_TOKEN_TTL_MINUTES: z.coerce.number().int().min(1).max(60).default(10),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(30),
   MAIL_MODE: z.enum(["token", "smtp"]).default("token"),

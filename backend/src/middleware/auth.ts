@@ -1,5 +1,6 @@
 import type { RequestHandler } from "express";
 import type { RoleCode } from "../generated/prisma/enums.js";
+import { getEnv } from "../config/env.js";
 import { getPrisma } from "../infrastructure/database/prisma.js";
 import { AppError } from "../shared/errors.js";
 import { verifyAccessToken } from "../shared/tokens.js";
@@ -21,11 +22,20 @@ export const authenticate: RequestHandler = async (request, _response, next) => 
         expiresAt: { gt: new Date() },
         user: { status: "ACTIVE" }
       },
-      select: { id: true }
+      select: { id: true, mfaVerifiedAt: true }
     });
 
     if (!session) {
       throw new AppError(401, "SESSION_INVALID", "The session is no longer valid");
+    }
+
+    const mfaVerified = Boolean(
+      session.mfaVerifiedAt &&
+        session.mfaVerifiedAt.getTime() >
+          Date.now() - getEnv().MFA_SESSION_TTL_HOURS * 60 * 60 * 1_000
+    );
+    if (claims.mfaVerified !== mfaVerified) {
+      throw new AppError(401, "SESSION_CLAIMS_STALE", "The session claims are no longer valid");
     }
 
     request.auth = claims;
@@ -54,6 +64,18 @@ export function requireRole(...allowedRoles: RoleCode[]): RequestHandler {
     next();
   };
 }
+
+export const requireMfa: RequestHandler = (request, _response, next) => {
+  if (!request.auth) {
+    next(new AppError(401, "AUTH_REQUIRED", "Authentication is required"));
+    return;
+  }
+  if (!request.auth.mfaVerified) {
+    next(new AppError(403, "MFA_REQUIRED", "A recent MFA verification is required"));
+    return;
+  }
+  next();
+};
 
 export function requireActor(request: Express.Request): NonNullable<Express.Request["auth"]> {
   if (!request.auth) {

@@ -162,6 +162,7 @@ model AuthSession {
   rotatedFromSessionId String?   @unique(map: "auth_sessions_rotated_from_uq") @map("rotated_from_session_id") @db.Char(36)
   ipPrefixHash         Bytes?    @map("ip_prefix_hash") @db.Binary(32)
   userAgentHash        Bytes?    @map("user_agent_hash") @db.Binary(32)
+  mfaVerifiedAt        DateTime? @map("mfa_verified_at") @db.DateTime(3)
   createdAt            DateTime  @default(now()) @map("created_at") @db.DateTime(3)
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -194,7 +195,7 @@ model MfaFactor {
   factorType       MfaFactorType @map("factor_type")
   secretCiphertext Bytes         @map("secret_ciphertext") @db.VarBinary(512)
   keyVersion       Int           @map("key_version") @db.UnsignedSmallInt
-  enabledAt        DateTime      @map("enabled_at") @db.DateTime(3)
+  enabledAt        DateTime?     @map("enabled_at") @db.DateTime(3)
   lastUsedStep     BigInt?       @map("last_used_step") @db.UnsignedBigInt
   revokedAt        DateTime?     @map("revoked_at") @db.DateTime(3)
   createdAt        DateTime      @default(now()) @map("created_at") @db.DateTime(3)

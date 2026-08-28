@@ -33,7 +33,8 @@ const registerSchema = z.object({
 
 const loginSchema = z.object({
   email: z.email().max(254),
-  password: z.string().min(1).max(128)
+  password: z.string().min(1).max(128),
+  mfaCode: z.string().trim().min(6).max(64).optional()
 });
 
 const tokenSchema = z.object({
@@ -52,16 +53,20 @@ const resetPasswordSchema = z.object({
 
 export function createAuthRouter(): Router {
   const router = Router();
-  const limiter = rateLimit({
+  const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1_000,
     limit: 20,
     standardHeaders: "draft-8",
     legacyHeaders: false
   });
+  const accountActionLimiter = rateLimit({
+    windowMs: 15 * 60 * 1_000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false
+  });
 
-  router.use(limiter);
-
-  router.post("/register", async (request, response) => {
+  router.post("/register", accountActionLimiter, async (request, response) => {
     const result = await registerUser(
       registerSchema.parse(request.body),
       getRequestContext(request)
@@ -69,31 +74,31 @@ export function createAuthRouter(): Router {
     response.status(201).json(result);
   });
 
-  router.post("/verify-email", async (request, response) => {
+  router.post("/verify-email", accountActionLimiter, async (request, response) => {
     const { token } = tokenSchema.parse(request.body);
     await verifyEmail(token, getRequestContext(request));
     response.status(204).send();
   });
 
-  router.post("/resend-verification", async (request, response) => {
+  router.post("/resend-verification", accountActionLimiter, async (request, response) => {
     const { email } = emailSchema.parse(request.body);
     await resendEmailVerification(email, getRequestContext(request));
     response.status(204).send();
   });
 
-  router.post("/request-password-reset", async (request, response) => {
+  router.post("/request-password-reset", accountActionLimiter, async (request, response) => {
     const { email } = emailSchema.parse(request.body);
     const result = await requestPasswordReset(email, getRequestContext(request));
     response.status(202).json({ accepted: true, ...result });
   });
 
-  router.post("/reset-password", async (request, response) => {
+  router.post("/reset-password", accountActionLimiter, async (request, response) => {
     const input = resetPasswordSchema.parse(request.body);
     await resetPassword(input.token, input.newPassword, getRequestContext(request));
     response.status(204).send();
   });
 
-  router.post("/login", async (request, response) => {
+  router.post("/login", loginLimiter, async (request, response) => {
     const result = await loginUser(loginSchema.parse(request.body), getRequestContext(request));
     response.json(result);
   });

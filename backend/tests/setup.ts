@@ -17,6 +17,7 @@ process.env.CONTACT_ENCRYPTION_KEY_BASE64 = testKey;
 process.env.CONTACT_LOOKUP_KEY_BASE64 = testKey;
 process.env.AUDIT_HMAC_KEY_BASE64 = testKey;
 process.env.MFA_ENCRYPTION_KEY_BASE64 = testKey;
+process.env.MFA_SESSION_TTL_HOURS = "12";
 process.env.ACCESS_TOKEN_TTL_MINUTES = "10";
 process.env.REFRESH_TOKEN_TTL_DAYS = "30";
 process.env.MAIL_MODE = "token";

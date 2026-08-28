@@ -10,6 +10,8 @@ import { createBidRouter } from "./modules/bids/bid.routes.js";
 import { createMarketRouter } from "./modules/market/market.routes.js";
 import { createProfileRouter } from "./modules/profiles/profile.routes.js";
 import { createPhotoRouter } from "./modules/media/photo.routes.js";
+import { createMfaRouter } from "./modules/auth/mfa.routes.js";
+import { createAdminRouter } from "./modules/admin/admin.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/errors.js";
 
 export function createApp(): Express {
@@ -35,7 +37,7 @@ export function createApp(): Express {
         }
         callback(null, false);
       },
-      methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["content-type", "authorization", "idempotency-key", "x-request-id"],
       exposedHeaders: ["x-request-id"],
       maxAge: 600
@@ -62,6 +64,8 @@ export function createApp(): Express {
 
   const api = express.Router();
   api.use("/auth", createAuthRouter());
+  api.use(createMfaRouter());
+  api.use(createAdminRouter());
   api.use(createProfileRouter());
   api.use(createMarketRouter());
   api.use(createPhotoRouter());

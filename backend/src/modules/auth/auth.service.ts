@@ -18,6 +18,7 @@ import { AppError } from "../../shared/errors.js";
 import { hashPassword, needsPasswordRehash, verifyPassword } from "../../shared/password.js";
 import { signAccessToken } from "../../shared/tokens.js";
 import type { RequestContext } from "../../shared/request-context.js";
+import { consumeMfaCode } from "./mfa.service.js";
 
 const CONTACT_KEY_VERSION = 1;
 const MAX_FAILED_LOGINS = 5;
@@ -35,6 +36,7 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
+  mfaCode?: string | undefined;
 }
 
 async function deliverTransactionalMail(
@@ -55,6 +57,8 @@ export interface TokenPair {
   accessToken: string;
   refreshToken: string;
   expiresInSeconds: number;
+  mfaRequired: boolean;
+  mfaVerified: boolean;
 }
 
 function sessionExpiry(): Date {
@@ -67,7 +71,8 @@ async function issueSession(
   userId: string,
   roles: RoleCode[],
   context: RequestContext,
-  rotatedFromSessionId?: string
+  rotatedFromSessionId?: string,
+  mfaVerifiedAt?: Date
 ): Promise<TokenPair> {
   const sessionId = randomUUID();
   const refreshToken = randomToken();
@@ -80,14 +85,22 @@ async function issueSession(
       expiresAt: sessionExpiry(),
       ...(rotatedFromSessionId ? { rotatedFromSessionId } : {}),
       ...(context.ipHash ? { ipPrefixHash: context.ipHash } : {}),
-      ...(context.userAgentHash ? { userAgentHash: context.userAgentHash } : {})
+      ...(context.userAgentHash ? { userAgentHash: context.userAgentHash } : {}),
+      ...(mfaVerifiedAt ? { mfaVerifiedAt } : {})
     }
   });
 
   return {
-    accessToken: await signAccessToken({ userId, sessionId, roles }),
+    accessToken: await signAccessToken({
+      userId,
+      sessionId,
+      roles,
+      mfaVerified: Boolean(mfaVerifiedAt)
+    }),
     refreshToken,
-    expiresInSeconds: getEnv().ACCESS_TOKEN_TTL_MINUTES * 60
+    expiresInSeconds: getEnv().ACCESS_TOKEN_TTL_MINUTES * 60,
+    mfaRequired: roles.includes("ADMIN") && !mfaVerifiedAt,
+    mfaVerified: Boolean(mfaVerifiedAt)
   };
 }
 
@@ -521,7 +534,18 @@ export async function loginUser(
           : {})
       }
     });
-    const tokens = await issueSession(transaction, contact.userId, roles, context);
+    let mfaVerifiedAt: Date | undefined;
+    if (input.mfaCode) {
+      mfaVerifiedAt = await consumeMfaCode(transaction, contact.userId, input.mfaCode);
+    }
+    const tokens = await issueSession(
+      transaction,
+      contact.userId,
+      roles,
+      context,
+      undefined,
+      mfaVerifiedAt
+    );
     await writeAudit(transaction, {
       actorUserId: contact.userId,
       actionCode: "AUTH_LOGIN",
@@ -574,7 +598,20 @@ export async function refreshSession(
       throw new AppError(409, "SESSION_ROTATION_CONFLICT", "The session was already rotated");
     }
 
-    const tokens = await issueSession(transaction, session.userId, roles, context, session.id);
+    const activeMfaVerification =
+      session.mfaVerifiedAt &&
+      session.mfaVerifiedAt.getTime() >
+        Date.now() - getEnv().MFA_SESSION_TTL_HOURS * 60 * 60 * 1_000
+        ? session.mfaVerifiedAt
+        : undefined;
+    const tokens = await issueSession(
+      transaction,
+      session.userId,
+      roles,
+      context,
+      session.id,
+      activeMfaVerification
+    );
     await writeAudit(transaction, {
       actorUserId: session.userId,
       actionCode: "AUTH_REFRESH",

@@ -6,6 +6,7 @@ import {
   disconnectPrisma,
   getPrisma
 } from "../../src/infrastructure/database/prisma.js";
+import { currentTotpStep, totpAtStep } from "../../src/shared/totp.js";
 
 interface TestAccount {
   userId: string;
@@ -34,7 +35,10 @@ async function createVerifiedAccount(
   label: string
 ): Promise<TestAccount> {
   const email = `${label}.${runId}@example.test`;
-  const phoneSuffix = label === "farmer" ? "1" : label === "buyer-a" ? "2" : "3";
+  const phoneSuffix =
+    { farmer: "1", "buyer-a": "2", "buyer-b": "3", admin: "4", managed: "5" }[
+      label
+    ] ?? "9";
   const phone = `+573${runDigits}${phoneSuffix}`;
   const displayName = `Integration ${label}`;
   const password = "Integration-Password-2026!";
@@ -102,11 +106,118 @@ describe("MySQL 8.4 integration", () => {
   });
 
   it("persists the complete anonymous bid and concurrent award lifecycle", async () => {
-    const [farmer, buyerA, buyerB] = await Promise.all([
+    const [farmer, buyerA, buyerB, admin, managed] = await Promise.all([
       createVerifiedAccount("FARMER", "farmer"),
       createVerifiedAccount("BUYER", "buyer-a"),
-      createVerifiedAccount("BUYER", "buyer-b")
+      createVerifiedAccount("BUYER", "buyer-b"),
+      createVerifiedAccount("BUYER", "admin"),
+      createVerifiedAccount("FARMER", "managed")
     ]);
+
+    await prisma.userRole.create({
+      data: { userId: admin.userId, roleCode: "ADMIN" }
+    });
+    const adminLogin = await request(app).post("/api/v1/auth/login").send({
+      email: admin.email,
+      password: admin.password
+    });
+    expect(adminLogin.status).toBe(200);
+    expect(adminLogin.body).toMatchObject({ mfaRequired: true, mfaVerified: false });
+    admin.accessToken = adminLogin.body.accessToken;
+
+    const adminWithoutMfa = await request(app)
+      .get("/api/v1/admin/users")
+      .set("Authorization", authorization(admin.accessToken));
+    expect(adminWithoutMfa.status).toBe(403);
+    expect(adminWithoutMfa.body.error.code).toBe("MFA_REQUIRED");
+
+    const enrollment = await request(app)
+      .post("/api/v1/me/mfa/totp/enroll")
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ password: admin.password });
+    expect(enrollment.status).toBe(201);
+    expect(enrollment.body.data.otpauthUri).toContain("otpauth://totp/");
+    const mfaCode = totpAtStep(enrollment.body.data.secret, currentTotpStep());
+    const confirmation = await request(app)
+      .post("/api/v1/me/mfa/totp/confirm")
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ code: mfaCode });
+    expect(confirmation.status).toBe(200);
+    expect(confirmation.body.data.recoveryCodes).toHaveLength(10);
+    admin.accessToken = confirmation.body.data.accessToken;
+
+    const adminUsers = await request(app)
+      .get("/api/v1/admin/users?role=FARMER&limit=10")
+      .set("Authorization", authorization(admin.accessToken));
+    expect(adminUsers.status).toBe(200);
+    expect(adminUsers.body.data.some(({ id }: { id: string }) => id === managed.userId)).toBe(
+      true
+    );
+
+    const replayedTotp = await request(app).post("/api/v1/auth/login").send({
+      email: admin.email,
+      password: admin.password,
+      mfaCode
+    });
+    expect(replayedTotp.status).toBe(409);
+    expect(replayedTotp.body.error.code).toBe("MFA_CODE_REUSED");
+
+    const recoveryCode = confirmation.body.data.recoveryCodes[0] as string;
+    const recoveryLogin = await request(app).post("/api/v1/auth/login").send({
+      email: admin.email,
+      password: admin.password,
+      mfaCode: recoveryCode
+    });
+    expect(recoveryLogin.status).toBe(200);
+    expect(recoveryLogin.body.mfaVerified).toBe(true);
+    const recoveryReuse = await request(app).post("/api/v1/auth/login").send({
+      email: admin.email,
+      password: admin.password,
+      mfaCode: recoveryCode
+    });
+    expect(recoveryReuse.status).toBe(401);
+    admin.accessToken = recoveryLogin.body.accessToken;
+
+    const managedRoles = await request(app)
+      .put(`/api/v1/admin/users/${managed.userId}/roles`)
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ roles: ["FARMER", "BUYER"], buyerType: "STORE" });
+    expect(managedRoles.status).toBe(200);
+    expect(
+      managedRoles.body.data.roles
+        .map(({ roleCode }: { roleCode: string }) => roleCode)
+        .sort()
+    ).toEqual(["BUYER", "FARMER"]);
+    const revokedByRoleChange = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(managed.accessToken));
+    expect(revokedByRoleChange.status).toBe(401);
+    const managedLogin = await request(app).post("/api/v1/auth/login").send({
+      email: managed.email,
+      password: managed.password
+    });
+    expect(managedLogin.status).toBe(200);
+    managed.accessToken = managedLogin.body.accessToken;
+
+    const suspendManaged = await request(app)
+      .patch(`/api/v1/admin/users/${managed.userId}/status`)
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ status: "SUSPENDED" });
+    expect(suspendManaged.status).toBe(200);
+    const suspendedSession = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(managed.accessToken));
+    expect(suspendedSession.status).toBe(401);
+    const restoreManaged = await request(app)
+      .patch(`/api/v1/admin/users/${managed.userId}/status`)
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ status: "ACTIVE" });
+    expect(restoreManaged.status).toBe(200);
+    const selfRoleChange = await request(app)
+      .put(`/api/v1/admin/users/${admin.userId}/roles`)
+      .set("Authorization", authorization(admin.accessToken))
+      .send({ roles: ["BUYER"] });
+    expect(selfRoleChange.status).toBe(409);
     const municipality = await prisma.municipality.findUniqueOrThrow({
       where: { daneCode: "85001" }
     });

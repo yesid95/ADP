@@ -7,6 +7,7 @@ declare global {
         userId: string;
         sessionId: string;
         roles: RoleCode[];
+        mfaVerified: boolean;
       };
     }
   }
