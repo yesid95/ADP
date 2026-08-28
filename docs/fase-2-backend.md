@@ -4,23 +4,24 @@
 
 El backend se desarrolla en la rama codex/fase-2-backend. La rama main conserva el estado estable de Fase 1 y la especificación documental.
 
-## Implementado en la primera iteración
+## Implementado y validado en la rama
 
 - paquete independiente en backend/;
 - Express 5 + TypeScript;
 - Prisma 7 compatible con MySQL 8.4;
 - schema.prisma con los 25 modelos documentados;
-- migración SQL inicial;
+- tres migraciones SQL versionadas;
 - restricciones por fila y relaciones compuestas;
-- autenticación y sesiones rotatorias;
+- autenticación, correo SMTP, recuperación, sesiones rotatorias y MFA TOTP;
+- administración de usuarios protegida por rol y MFA;
 - cifrado de contactos;
-- CRUD inicial de fincas y publicaciones;
+- CRUD de perfiles, intereses, fincas, publicaciones y fotos privadas;
 - ofertas versionadas;
 - lectura anónima;
 - adjudicación única;
 - idempotencia y auditoría;
 - seed territorial inicial para Casanare;
-- pruebas unitarias, contractuales y HTTP sin base.
+- pruebas unitarias, contractuales y HTTP sobre MySQL 8.4.
 
 ## Conexión de componentes
 
@@ -54,9 +55,7 @@ flowchart LR
 
 ## Estado de verificación
 
-La verificación sin MySQL cubre tipos, criptografía, Argon2id, tokens, políticas monetarias, contrato del esquema, restricciones del SQL y superficie HTTP.
-
-La validación con MySQL real queda como siguiente puerta: migración, seed, ciclo completo y carrera concurrente de adjudicación.
+La verificación cubre tipos, criptografía, Argon2id, JWT, TOTP con vectores RFC 6238, políticas monetarias, restricciones SQL y superficie HTTP. MySQL 8.4 ejecuta las tres migraciones, seed, CRUD, privacidad, MFA/RBAC y una carrera de 100 solicitudes de adjudicación con un solo ganador; la misma suite corre en CI.
 
 ## Plan de cierre de los siete frentes
 
@@ -64,11 +63,11 @@ Este documento diferencia código existente de evidencia de cierre. Un frente no
 
 | # | Frente | Ya existe | Falta para aceptar |
 |---:|---|---|---|
-| 1 | MySQL 8.4 real | Schema, SQL inicial, seed y Compose | Aplicar desde cero, validar restricciones, ciclo E2E y CI efímero |
-| 2 | API CRUD | Registro, finca, publicación, oferta, revisión, comparación y adjudicación | CRUD de perfiles/intereses/fincas/publicaciones, fotografías, historial y paginación |
-| 3 | Autenticación y administración | Argon2id, verificación por token, JWT, refresh rotatorio y bloqueo | Correo real, cambio/recuperación de contraseña, administración de roles y MFA TOTP obligatorio |
+| 1 | MySQL 8.4 real | Migraciones, seed, reinicio frío, ciclo E2E y CI efímero | Cerrado |
+| 2 | API CRUD | Perfiles, intereses, fincas, publicaciones, fotos, ofertas, historial y paginación | Cerrado |
+| 3 | Autenticación y administración | SMTP, contraseñas, sesiones, roles, TOTP y recuperaciones | Validar credenciales SMTP del proveedor productivo |
 | 4 | Seguridad MySQL | Cifrado de PII, hashes ciegos, CHECK, FK y HMAC de eventos | Cuentas/GRANT, vista anónima, tablas inmutables y cadena `previous_hash` |
-| 5 | Integración y concurrencia | Pruebas unitarias, contractuales y HTTP sin base | Suite sobre MySQL, pruebas negativas de autorización y adjudicación concurrente |
+| 5 | Integración y concurrencia | Suite MySQL, privacidad, autorización, MFA y 100 adjudicaciones concurrentes | Ampliar a permisos técnicos y prueba de carga operacional |
 | 6 | Frontend persistente | Demo React completa con datos simulados | Cliente API, sesión, estados de red y recorrido comercial persistente |
 | 7 | Operación y recuperación | Health checks y logging con redacción | EXPLAIN, volumen, métricas, backup/PITR, restauración y medición RPO/RTO |
 

@@ -297,7 +297,7 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 - [x] Implementar núcleo de autenticación y sesiones.
 - [x] Implementar reglas y versiones de oferta.
 - [x] Implementar endpoint transaccional de aceptación.
-- [ ] Validar ciclo completo contra MySQL 8.4 en CI.
+- [x] Validar ciclo completo contra MySQL 8.4 en CI.
 - [ ] Separar cuentas MySQL y completar hardening de producción.
 - [x] Documentar arquitectura, relaciones, columnas, seguridad y plan de pruebas de la base de datos.
 

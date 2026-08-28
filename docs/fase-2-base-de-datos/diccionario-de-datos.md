@@ -122,6 +122,7 @@ Cada fila representa una familia de refresh token rotatorio.
 | rotated_from_session_id | CHAR(36) ASCII | Sí | FK autorreferente, ON DELETE SET NULL |
 | ip_prefix_hash | BINARY(32) | Sí | Dato seudonimizado |
 | user_agent_hash | BINARY(32) | Sí | Dato seudonimizado |
+| mfa_verified_at | DATETIME(3) | Sí | Último desafío MFA válido de la sesión |
 | created_at | DATETIME(3) | No | UTC |
 
 Índices:
@@ -129,6 +130,7 @@ Cada fila representa una familia de refresh token rotatorio.
 - UNIQUE refresh_token_hash.
 - INDEX auth_sessions_user_active_idx (user_id, revoked_at, expires_at).
 - INDEX auth_sessions_expiry_idx (expires_at).
+- INDEX auth_sessions_mfa_verified_idx (user_id, mfa_verified_at).
 
 ### auth_tokens
 
@@ -155,7 +157,7 @@ Tokens de un solo uso para verificación y recuperación.
 | factor_type | ENUM | No | TOTP |
 | secret_ciphertext | VARBINARY(512) | No | Cifrado autenticado |
 | key_version | SMALLINT UNSIGNED | No | Versión de la clave |
-| enabled_at | DATETIME(3) | No | UTC |
+| enabled_at | DATETIME(3) | Sí | NULL durante enrolamiento; UTC al confirmar |
 | last_used_step | BIGINT UNSIGNED | Sí | Impide reutilización del mismo código TOTP |
 | revoked_at | DATETIME(3) | Sí | UTC |
 | created_at | DATETIME(3) | No | UTC |

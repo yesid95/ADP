@@ -10,9 +10,10 @@ Esta rama contiene la primera base ejecutable de Fase 2:
 - Prisma 7.9.1, línea soportada para MySQL;
 - 25 modelos relacionales;
 - migración inicial con FKs, índices, ENUM y CHECK;
-- registro, verificación de correo, login, refresh rotatorio y logout;
+- registro, correo SMTP, recuperación/cambio de contraseña, login, refresh rotatorio y logout;
+- MFA TOTP cifrado, códigos de recuperación de un solo uso y administración RBAC;
 - Argon2id, AES-256-GCM, hashes ciegos y auditoría HMAC;
-- fincas y publicaciones;
+- CRUD de perfiles, intereses, fincas, publicaciones y fotografías privadas;
 - ofertas con versiones inmutables;
 - idempotencia;
 - adjudicación única bajo transacción serializable y bloqueo de filas;
@@ -31,7 +32,7 @@ Prisma 8 no se usa porque su versión actual todavía no soporta MySQL. Prisma 7
 ## Configuración
 
 1. Copiar .env.example como .env.
-2. Cambiar credenciales y generar cuatro secretos independientes de 32 bytes.
+2. Cambiar credenciales y generar cinco secretos independientes de 32 bytes.
 
 Ejemplo para generar cada secreto:
 
@@ -39,11 +40,13 @@ Ejemplo para generar cada secreto:
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 ~~~
 
-No reutilizar la misma clave para JWT, cifrado, lookup y auditoría.
+No reutilizar la misma clave para JWT, contactos, MFA, lookup y auditoría.
+
+En desarrollo se admite `MAIL_MODE=token`. En producción el esquema de entorno exige `MAIL_MODE=smtp`; configurar host, puerto, TLS, usuario, contraseña, remitente y `APP_PUBLIC_URL` conforme a `.env.example`.
 
 ## MySQL local con Docker
 
-Copiar .env.docker.example como .env.docker, definir las dos contraseñas y ejecutar desde backend:
+Copiar .env.docker.example como .env.docker, definir las contraseñas de root, aplicación y observación, y ejecutar desde backend:
 
 ~~~bash
 docker compose --env-file .env.docker up -d
@@ -92,9 +95,21 @@ Prefijo: /api/v1.
 | GET | /health/ready | Público interno | Conexión MySQL |
 | POST | /auth/register | Público limitado | Crear cuenta FARMER o BUYER |
 | POST | /auth/verify-email | Público limitado | Activar correo |
+| POST | /auth/resend-verification | Público limitado | Reenviar activación sin revelar existencia |
+| POST | /auth/request-password-reset | Público limitado | Solicitar recuperación |
+| POST | /auth/reset-password | Público limitado | Consumir token y revocar sesiones |
 | POST | /auth/login | Público limitado | Abrir sesión |
 | POST | /auth/refresh | Público limitado | Rotar sesión |
 | POST | /auth/logout | Público limitado | Revocar refresh token |
+| GET | /me | Autenticado | Leer perfil y contacto propio |
+| POST | /me/password | Autenticado | Cambiar contraseña y revocar sesiones |
+| GET | /me/mfa | Autenticado | Consultar estado MFA |
+| POST | /me/mfa/totp/enroll | Autenticado | Crear secreto TOTP pendiente |
+| POST | /me/mfa/totp/confirm | Autenticado | Confirmar TOTP y emitir recuperaciones |
+| POST | /me/mfa/disable | MFA reciente | Revocar factor |
+| GET | /admin/users | ADMIN + MFA | Listar usuarios sin exponer contactos |
+| PATCH | /admin/users/:id/status | ADMIN + MFA | Activar o suspender |
+| PUT | /admin/users/:id/roles | ADMIN + MFA | Reemplazar roles y revocar sesiones |
 | POST | /farms | FARMER | Crear finca activa |
 | POST | /listings | FARMER propietario | Crear publicación DRAFT |
 | POST | /listings/:id/publish | FARMER propietario | Abrir publicación |
@@ -163,9 +178,9 @@ backend/
 
 ## Trabajo pendiente para cerrar Fase 2
 
-1. **MySQL real:** aplicar migración y seed desde cero, ejecutar el ciclo completo e incorporarlo al CI.
-2. **API CRUD:** perfiles, intereses, actualización/archivo de fincas y publicaciones, fotografías privadas, historial y paginación.
-3. **Autenticación y administración:** correo real, recuperación/cambio de contraseña, administración de roles y TOTP con recuperación.
+1. **MySQL real:** completado con MySQL 8.4, migraciones, seed, ciclo integral y CI efímero.
+2. **API CRUD:** completado para perfiles, intereses, fincas, publicaciones, fotografías e historial propio.
+3. **Autenticación y administración:** implementado; falta verificar el proveedor SMTP definitivo de producción.
 4. **Seguridad MySQL:** cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría INSERT-only y versiones sin UPDATE/DELETE.
 5. **Integración y concurrencia:** autorización negativa, privacidad, idempotencia y carrera de adjudicación sobre base real.
 6. **Frontend:** reemplazar estado y datos simulados por sesión y API persistente.

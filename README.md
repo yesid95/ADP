@@ -31,13 +31,14 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 
 - Backend Node.js + Express y TypeScript estricto.
 - Prisma para MySQL 8.4 con 25 modelos, migración inicial, llaves foráneas y restricciones reales.
-- Registro, verificación de correo, Argon2id, JWT corto y refresh token rotatorio.
+- Registro, correo SMTP, recuperación/cambio de contraseña, Argon2id, JWT corto y refresh token rotatorio.
+- MFA TOTP con recuperación de un solo uso y administración protegida por rol + MFA.
 - Separación y cifrado autenticado de contactos privados.
-- Fincas, publicaciones y ofertas con versiones inmutables.
+- CRUD de perfiles, intereses, fincas, publicaciones, fotografías privadas y ofertas con versiones inmutables.
 - Adjudicación única protegida por transacción serializable, bloqueo de filas e idempotencia.
 - Auditoría autenticada y pruebas unitarias/contractuales del backend.
 
-Antes de considerar terminada la fase faltan la validación integral sobre MySQL 8.4, MFA operativo, correo real, cuentas de base de datos con privilegios separados, pruebas de concurrencia y restauración de respaldos.
+MySQL 8.4, el CRUD y autenticación/MFA ya tienen pruebas de integración reales. Antes de considerar terminada la fase faltan los privilegios técnicos separados, el frontend persistente y la recuperación operativa desde respaldos.
 
 El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
 
@@ -45,15 +46,15 @@ La implementación ejecutable y su estado están en `backend/README.md` y `docs/
 
 ### Estado verificable de cierre de Fase 2
 
-La rama ya contiene el núcleo ejecutable: 25 modelos Prisma, migración inicial, autenticación y sesiones, cifrado de contactos, fincas, publicaciones, ofertas versionadas, adjudicación transaccional, idempotencia y pruebas sin base. Esto todavía no equivale a una Fase 2 terminada.
+La rama contiene 25 modelos Prisma, tres migraciones, autenticación/MFA, administración, cifrado de contactos, CRUD comercial, adjudicación transaccional, idempotencia y pruebas sobre MySQL 8.4. Esto todavía no equivale a una Fase 2 terminada.
 
 | Frente de cierre | Estado actual | Evidencia que falta para cerrarlo |
 |---|---|---|
-| MySQL 8.4 real | Pendiente de integración | Migración y seed desde cero, ciclo completo y CI con MySQL |
-| API CRUD | Parcial | Perfiles, intereses, edición/archivo, fotografías e historial propio |
-| Autenticación y administración | Parcial | Correo real, recuperación de contraseña, administración y MFA TOTP |
+| MySQL 8.4 real | Completo | Migraciones, seed, ciclo completo, reinicio frío y CI MySQL 8.4 |
+| API CRUD | Completo | Perfiles, intereses, fincas, publicaciones, fotos privadas, ofertas e historial |
+| Autenticación y administración | Implementado | Falta validar las credenciales del proveedor SMTP del entorno productivo |
 | Seguridad efectiva en MySQL | Parcial | Cuentas separadas, GRANT, vistas, inmutabilidad y auditoría encadenada |
-| Integración y concurrencia | Pendiente | Autorización con base real y carrera concurrente de adjudicación |
+| Integración y concurrencia | Avanzado | MySQL y 100 adjudicaciones concurrentes pasan; faltan privilegios y carga operacional |
 | Frontend persistente | Pendiente | Sustituir datos simulados por autenticación y API real |
 | Operación y recuperación | Pendiente | EXPLAIN, volumen, observabilidad, backup, PITR y restauración medida |
 
@@ -93,7 +94,7 @@ En otros shells se puede usar `cp` en lugar de `Copy-Item`.
 
 - `backend/.env.docker` define las contraseñas locales de root, aplicación y observación.
 - `backend/.env` debe usar el mismo `MYSQL_PASSWORD` en `DATABASE_URL` y `DATABASE_PASSWORD`.
-- Las cuatro claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes.
+- Las cinco claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes.
 - Ninguno de estos archivos se versiona.
 
 Para generar cada clave:
@@ -101,6 +102,8 @@ Para generar cada clave:
 ```bash
 node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 ```
+
+Para desarrollo, `MAIL_MODE=token` devuelve tokens de verificación y recuperación en la API. Producción rechaza esa modalidad: debe usar `MAIL_MODE=smtp` y configurar `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_REQUIRE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` y `APP_PUBLIC_URL`.
 
 ### 3. Levantar MySQL 8.4
 
@@ -203,11 +206,12 @@ La composición local no es una plantilla de producción. Antes de publicar ADP:
 
 1. aprovisionar MySQL 8.4 en red privada, con TLS obligatorio, backups cifrados y recuperación puntual;
 2. guardar credenciales y claves en un gestor de secretos;
-3. ejecutar `npm ci`, `npm run db:migrate:deploy` y `npm run build` dentro de `backend/`;
-4. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
-5. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
-6. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
-7. ejecutar pruebas de integración, restaurar un backup y verificar readiness antes de dirigir tráfico.
+3. configurar SMTP con TLS y verificar desde el proveedor que `SMTP_FROM` esté autorizado;
+4. ejecutar `npm ci`, `npm run db:migrate:deploy` y `npm run build` dentro de `backend/`;
+5. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
+6. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
+7. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
+8. ejecutar pruebas de integración, restaurar un backup y verificar readiness antes de dirigir tráfico.
 
 El backend no debe exponerse a Internet hasta cerrar todos los criterios de seguridad y operación documentados para Fase 2.
 
