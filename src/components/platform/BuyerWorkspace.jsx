@@ -20,7 +20,7 @@ export function BuyerWorkspace({ client, publicListings, reloadPublicListings })
     await Promise.all([loadBids(), reloadPublicListings()]);
   }, [loadBids, reloadPublicListings]);
 
-  useEffect(() => { load().catch((loadError) => setError(errorMessage(loadError))); }, [load]);
+  useEffect(() => { loadBids().catch((loadError) => setError(errorMessage(loadError))); }, [loadBids]);
 
   async function submitBid(event) {
     event.preventDefault();

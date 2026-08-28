@@ -53,6 +53,7 @@
   padding: 10px 12px;
   width: 100%;
 }
+.platform-form input[type="file"] { max-width: 100%; overflow: hidden; }
 .platform-alert { border-radius: 8px; font-size: .85rem; line-height: 1.45; padding: 11px 12px; }
 .platform-alert.error, .platform-global-error { background: #fbe9e7; color: var(--danger); }
 .platform-alert.success { background: #edf6e8; color: #285622; }
@@ -100,7 +101,128 @@
 .platform-record dt { color: var(--muted); font-size: .78rem; font-weight: 750; }
 .platform-record dd { font-size: .82rem; font-weight: 800; margin: 0; text-align: right; }
 
+.decision-assistant { display: grid; gap: 16px; margin-top: 16px; }
+.decision-summary {
+  align-items: center;
+  background: #eef5e9;
+  border: 1px solid #cbdcc1;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 16px;
+}
+.decision-summary-icon, .winner-icon {
+  align-items: center;
+  background: var(--green);
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+.decision-summary span, .award-confirmation span, .winner-reveal.enhanced > div span:first-child {
+  color: var(--green);
+  font-size: .72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.decision-summary h3 { font-size: 1rem; margin: 3px 0; }
+.decision-summary p { color: var(--muted); font-size: .8rem; line-height: 1.4; margin: 0; }
+.decision-count { background: white; border: 1px solid #cbdcc1; border-radius: 7px; padding: 7px 9px; white-space: nowrap; }
+.decision-empty { align-items: center; color: var(--muted); display: flex; gap: 10px; padding: 18px 4px 4px; }
+.decision-empty p { line-height: 1.5; margin: 0; }
+.bid-comparison-grid { display: grid; gap: 12px; }
+.bid-comparison-card {
+  background: #fbfcfa;
+  border: 1px solid #dfe5da;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+.bid-comparison-card.recommended { background: #fffdf5; border: 2px solid var(--gold); }
+.bid-card-top, .anonymous-buyer, .winner-contact { align-items: center; display: flex; gap: 10px; }
+.bid-card-top { align-items: flex-start; justify-content: space-between; }
+.anonymous-buyer > span {
+  align-items: center;
+  background: var(--green-dark);
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 900;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+.anonymous-buyer small { color: var(--muted); font-size: .68rem; }
+.anonymous-buyer h3 { font-size: .95rem; margin: 1px 0 0; }
+.recommended-badge, .accepted-label {
+  align-items: center;
+  background: #fff2c7;
+  border-radius: 6px;
+  color: #6d4a00;
+  display: inline-flex;
+  font-size: .7rem;
+  font-weight: 900;
+  gap: 4px;
+  padding: 6px 8px;
+}
+.net-value { border-bottom: 1px solid #e4e9df; display: grid; padding-bottom: 12px; }
+.net-value small { color: var(--muted); font-size: .72rem; }
+.net-value strong { color: var(--green-dark); font-size: 1.55rem; line-height: 1.15; }
+.net-value span { color: var(--muted); font-size: .78rem; }
+.bid-metrics { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin: 0; }
+.bid-metrics div { background: #f0f3ed; border-radius: 6px; padding: 8px; }
+.bid-metrics dt { color: var(--muted); font-size: .67rem; }
+.bid-metrics dd { font-size: .78rem; font-weight: 850; margin: 2px 0 0; }
+.bid-signals { display: flex; flex-wrap: wrap; gap: 6px; }
+.signal { align-items: center; border-radius: 5px; display: inline-flex; font-size: .68rem; font-weight: 800; gap: 4px; padding: 5px 7px; }
+.signal.positive { background: #e8f4e2; color: #295a22; }
+.signal.warning { background: #fff0dc; color: #7a4914; }
+.accepted-label { background: #e2f2dc; color: #24551f; justify-content: center; }
+.award-confirmation {
+  align-items: center;
+  background: #fff8e7;
+  border: 1px solid #e5ca80;
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+.award-confirmation > div:first-child { max-width: 680px; }
+.award-confirmation h3 { margin: 4px 0; }
+.award-confirmation p { color: var(--muted); line-height: 1.45; margin: 0; }
+.winner-reveal.enhanced {
+  align-items: center;
+  background: #eaf5e5;
+  border: 1px solid #bdd5b1;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 18px;
+}
+.winner-reveal.enhanced h3 { font-size: 1.2rem; margin: 4px 0; }
+.winner-reveal.enhanced p { color: var(--muted); font-size: .82rem; line-height: 1.45; margin: 0; }
+.winner-contact { flex-wrap: wrap; margin-top: 8px; }
+.winner-contact span { color: var(--ink) !important; font-size: .78rem !important; font-weight: 800 !important; text-transform: none !important; }
+.whatsapp-button { align-items: center; background: #167b48; border-radius: 7px; color: white; display: inline-flex; font-weight: 850; gap: 7px; padding: 11px 13px; text-decoration: none; white-space: nowrap; }
+.decision-footnote { align-items: center; color: var(--muted); display: flex; font-size: .74rem; gap: 7px; margin: 0; }
+
 @media (min-width: 860px) {
   .platform-auth { grid-template-columns: minmax(0, 1.2fr) minmax(340px, .8fr); }
   .platform-columns { grid-template-columns: minmax(340px, .85fr) minmax(430px, 1.15fr); }
+  .bid-comparison-grid { grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .decision-summary { grid-template-columns: auto minmax(0, 1fr); }
+  .decision-count { grid-column: 1 / -1; justify-self: start; }
+  .winner-reveal.enhanced { grid-template-columns: auto minmax(0, 1fr); }
+  .whatsapp-button { grid-column: 1 / -1; justify-content: center; }
 }

@@ -10,12 +10,13 @@ export function FormStatus({ error, notice }) {
 }
 
 export function ListingCard({ listing, actions }) {
+  const location = [listing.farm?.name, listing.farm?.publicLocationText].filter(Boolean).join(" · ");
   return (
     <article className="platform-record">
       <div>
         <span className="pill">{listing.status || "OPEN"}</span>
         <h3>{listing.cropVariety?.name || "Cosecha"}</h3>
-        <p>{listing.farm?.name} · {listing.farm?.publicLocationText}</p>
+        <p>{location}</p>
       </div>
       <dl>
         <div><dt>Cantidad</dt><dd>{listing.estimatedQuantityKg} kg</dd></div>

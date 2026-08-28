@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { idempotencyKey } from "../../lib/api.js";
+import { BidComparison } from "./BidComparison.jsx";
 import { FormStatus, ListingCard } from "./shared.jsx";
-import { errorMessage, isoDate, money } from "./utils.js";
+import { errorMessage, isoDate } from "./utils.js";
 
 export function FarmerWorkspace({ client, catalog }) {
   const [farms, setFarms] = useState([]);
   const [listings, setListings] = useState([]);
   const [bids, setBids] = useState([]);
   const [selectedListingId, setSelectedListingId] = useState(null);
+  const [pendingBidId, setPendingBidId] = useState(null);
+  const [focusComparison, setFocusComparison] = useState(false);
   const [winner, setWinner] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -24,6 +27,7 @@ export function FarmerWorkspace({ client, catalog }) {
     cropConditionNotes: "",
     photo: null
   });
+  const comparisonRef = useRef(null);
 
   const load = useCallback(async () => {
     const [farmPage, listingPage] = await Promise.all([
@@ -37,6 +41,12 @@ export function FarmerWorkspace({ client, catalog }) {
   useEffect(() => {
     load().catch((loadError) => setError(errorMessage(loadError)));
   }, [load]);
+
+  useEffect(() => {
+    if (!focusComparison || !comparisonRef.current) return;
+    comparisonRef.current.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    setFocusComparison(false);
+  }, [bids, focusComparison]);
 
   async function createFarm(event) {
     event.preventDefault();
@@ -86,11 +96,13 @@ export function FarmerWorkspace({ client, catalog }) {
     finally { setBusy(false); }
   }
 
-  async function loadBids(listingId) {
-    setError(""); setWinner(null); setSelectedListingId(listingId);
+  async function loadBids(listingId, preserveWinner = false) {
+    setError(""); setPendingBidId(null); setSelectedListingId(listingId);
+    if (!preserveWinner) setWinner(null);
     try {
       const response = await client.request(`/listings/${listingId}/bids`);
       setBids(response.data);
+      setFocusComparison(true);
     } catch (bidError) { setError(errorMessage(bidError)); }
   }
 
@@ -105,7 +117,7 @@ export function FarmerWorkspace({ client, catalog }) {
       const contact = await client.request(`/listings/${selectedListingId}/award/contact`);
       setWinner(contact.data);
       setNotice("Oferta adjudicada. La identidad del ganador quedó habilitada.");
-      await Promise.all([load(), loadBids(selectedListingId)]);
+      await Promise.all([load(), loadBids(selectedListingId, true)]);
     } catch (awardError) { setError(errorMessage(awardError)); }
     finally { setBusy(false); }
   }
@@ -150,19 +162,9 @@ export function FarmerWorkspace({ client, catalog }) {
           </div>
         </div>
         {selectedListingId && (
-          <div className="panel">
-            <h2>Ofertas anónimas</h2>
-            <div className="platform-records">
-              {bids.map((bid) => (
-                <article className="platform-record" key={bid.id}>
-                  <h3>{bid.anonymousLabel}</h3>
-                  <p>{money.format(Number(bid.terms.netAmountCop))} netos · pago a {bid.terms.paymentTermDays} días</p>
-                  <button className="primary-button compact-button" disabled={busy || bid.status !== "SUBMITTED"} onClick={() => award(bid.id)} type="button">Adjudicar</button>
-                </article>
-              ))}
-              {!bids.length && <p className="helper-copy">Esta publicación todavía no tiene ofertas.</p>}
-            </div>
-            {winner && <div className="winner-reveal"><span>Comprador ganador</span><h3>{winner.businessName || winner.displayName}</h3><p>{winner.email}</p><p>{winner.phone || "Sin teléfono"}</p></div>}
+          <div className="panel" ref={comparisonRef}>
+            <div className="panel-heading"><div><p className="eyebrow">Decisión comercial</p><h2>Ofertas anónimas</h2></div><span className="pill">Identidad protegida</span></div>
+            <BidComparison bids={bids} busy={busy} listing={listings.find((item) => item.id === selectedListingId)} onAward={award} pendingBidId={pendingBidId} setPendingBidId={setPendingBidId} winner={winner} />
           </div>
         )}
       </section>

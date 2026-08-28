@@ -24,7 +24,8 @@ export function PlatformApp({ client = apiClient, onOpenDemo }) {
     const response = await client.request("/me");
     setProfile(response.data);
     setActiveRole((current) => current || (response.data.roles.includes("FARMER") ? "FARMER" : "BUYER"));
-  }, [client]);
+    if (response.data.roles.includes("BUYER")) await loadPublicListings();
+  }, [client, loadPublicListings]);
 
   useEffect(() => {
     let active = true;
