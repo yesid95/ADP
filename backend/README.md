@@ -69,6 +69,8 @@ docker compose --env-file .env.docker exec mysql sh /opt/adp/security/apply-gran
 npm run dev
 ~~~
 
+Antes de publicar el servicio, ejecutar `npm run admin:bootstrap`. El comando requiere `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` y, opcionalmente, `BOOTSTRAP_ADMIN_DISPLAY_NAME`. La contraseña debe tener al menos 16 caracteres y debe proporcionarse temporalmente desde el shell o un gestor de secretos; no se guarda en este repositorio. El procedimiento completo y seguro para PowerShell y Bash está en el README principal.
+
 Servidor por defecto:
 
 ~~~text
@@ -88,6 +90,7 @@ http://127.0.0.1:3000
 | npm run db:migrate:dev | Crear/aplicar migraciones de desarrollo |
 | npm run db:migrate:deploy | Aplicar migraciones versionadas |
 | npm run db:seed | Cargar Casanare, municipios y plátano hartón |
+| npm run admin:bootstrap | Crear o recuperar el administrador, rotar contraseña y revocar sesiones/MFA |
 | npm run db:plans | Verificar ocho planes críticos y métricas MySQL |
 | npm run test:load | Carga HTTP local bajo el rate limit por IP |
 | npm run db:recovery:drill | Backup cifrado, binlog y restore aislado |

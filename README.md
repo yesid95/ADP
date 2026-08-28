@@ -129,7 +129,47 @@ npm run test:integration
 
 Las migraciones crean tablas, relaciones, restricciones y la vista anónima. El seed carga Casanare, sus 19 municipios y `PLATANO_HARTON`. El paso `apply-grants.sh` crea o rota las cuentas técnicas, aplica privilegios mínimos e instala el procedimiento y los triggers de auditoría; debe ejecutarse después de cada migración que agregue tablas o vistas.
 
-### 5. Ejecutar API y frontend
+### 5. Crear o recuperar la cuenta administradora
+
+El proyecto no incluye una contraseña administrativa fija. Después de migrar la base y aplicar los privilegios, cada instalación debe crear su propio administrador con un secreto distinto. El comando exige una contraseña de 16 a 128 caracteres, la protege con Argon2id y nunca la imprime.
+
+En PowerShell, desde `backend/`:
+
+```powershell
+$env:BOOTSTRAP_ADMIN_EMAIL = Read-Host "Correo del administrador"
+$adminSecret = Read-Host "Contraseña administrativa (mínimo 16 caracteres)" -AsSecureString
+$adminCredential = [PSCredential]::new("adp-admin", $adminSecret)
+$env:BOOTSTRAP_ADMIN_PASSWORD = $adminCredential.GetNetworkCredential().Password
+$env:BOOTSTRAP_ADMIN_DISPLAY_NAME = "Administrador ADP"
+
+try {
+  npm run admin:bootstrap
+} finally {
+  Remove-Item Env:BOOTSTRAP_ADMIN_EMAIL -ErrorAction SilentlyContinue
+  Remove-Item Env:BOOTSTRAP_ADMIN_PASSWORD -ErrorAction SilentlyContinue
+  Remove-Item Env:BOOTSTRAP_ADMIN_DISPLAY_NAME -ErrorAction SilentlyContinue
+}
+```
+
+En Bash:
+
+```bash
+read -r -p "Correo del administrador: " BOOTSTRAP_ADMIN_EMAIL
+read -r -s -p "Contraseña administrativa (mínimo 16 caracteres): " BOOTSTRAP_ADMIN_PASSWORD
+printf '\n'
+export BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD
+export BOOTSTRAP_ADMIN_DISPLAY_NAME="Administrador ADP"
+npm run admin:bootstrap
+unset BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD BOOTSTRAP_ADMIN_DISPLAY_NAME
+```
+
+En una base nueva crea el usuario `ACTIVE`, marca su correo como verificado y asigna exclusivamente el rol `ADMIN`. Si el correo ya existe, el mismo comando recupera la cuenta: rota la contraseña, conserva sus otros roles, revoca sesiones y factores MFA anteriores y registra la operación en la auditoría. Después hay que iniciar sesión y enrolar nuevamente MFA antes de consumir `/api/v1/admin/*`.
+
+No colocar `BOOTSTRAP_ADMIN_PASSWORD` en el README, `.env.example`, scripts, imágenes ni commits. En otro PC se repiten estos pasos con una contraseña nueva para ese entorno. Si se traslada una base existente, también deben trasladarse de forma segura sus claves criptográficas; cambiarlas sin una rotación planificada impediría localizar o descifrar los contactos existentes.
+
+La interfaz persistente actual implementa los espacios de productor y comprador. La cuenta administradora puede autenticarse, pero la consola visual de administración aún no forma parte del frontend; las operaciones administrativas disponibles en esta fase se realizan mediante la API y exigen MFA.
+
+### 6. Ejecutar API y frontend
 
 Terminal para backend:
 
@@ -232,11 +272,12 @@ La composición local no es una plantilla de producción. Antes de publicar ADP:
 2. guardar credenciales y claves en un gestor de secretos;
 3. configurar SMTP con TLS y verificar desde el proveedor que `SMTP_FROM` esté autorizado;
 4. ejecutar `npm ci`, `npm run db:migrate:deploy`, el hardening `database/security/apply-grants.sh` con una cuenta administrativa y `npm run build` dentro de `backend/`;
-5. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
-6. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
-7. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
-8. ejecutar `db:plans`, las pruebas de integración y `db:recovery:drill` sobre un clon aislado antes de dirigir tráfico;
-9. configurar alertas sobre readiness, tasa 5xx/429, p95, conexiones, espacio, `Slow_queries`, replicación y antigüedad del último backup.
+5. ejecutar una vez `npm run admin:bootstrap` con credenciales entregadas temporalmente por el gestor de secretos, retirarlas del entorno y enrolar MFA;
+6. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
+7. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
+8. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
+9. ejecutar `db:plans`, las pruebas de integración y `db:recovery:drill` sobre un clon aislado antes de dirigir tráfico;
+10. configurar alertas sobre readiness, tasa 5xx/429, p95, conexiones, espacio, `Slow_queries`, replicación y antigüedad del último backup.
 
 El cierre técnico no autoriza por sí solo exponer el backend: la lista productiva anterior, el smoke SMTP real y la restauración en la infraestructura elegida siguen siendo puertas obligatorias de despliegue.
 
