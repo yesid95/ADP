@@ -59,84 +59,169 @@ La rama ya contiene el núcleo ejecutable: 25 modelos Prisma, migración inicial
 
 El detalle, orden de ejecución y criterio de salida están en `docs/fase-2-backend.md`. Las fases 3 a 5 —tiempo real, IA real y reputación— no forman parte de esta puerta de cierre.
 
-## Ejecutar el proyecto
+## Desplegar el proyecto para desarrollo
 
 ### Requisitos
 
-- Node.js 20 o superior.
-- npm o pnpm.
+- Node.js 22.12 o superior; el entorno verificado usa Node 24.
+- npm 11 o superior.
+- Docker Desktop con soporte para Compose.
+- Puertos locales libres: 5173 para React, 3000 para la API y 3306 para MySQL.
 
-### Instalacion
+Docker se usa solamente para MySQL 8.4 local. El frontend y el backend se ejecutan con Node.js para conservar recarga rápida y depuración directa.
 
-Con npm:
+### 1. Instalar dependencias
+
+Desde la raíz:
 
 ```bash
 npm install
+npm --prefix backend install
 ```
 
-Con pnpm:
+### 2. Preparar variables locales
+
+Crear los archivos locales a partir de los ejemplos:
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
+Copy-Item backend/.env.docker.example backend/.env.docker
+```
+
+En otros shells se puede usar `cp` en lugar de `Copy-Item`.
+
+- `backend/.env.docker` define las contraseñas locales de root, aplicación y observación.
+- `backend/.env` debe usar el mismo `MYSQL_PASSWORD` en `DATABASE_URL` y `DATABASE_PASSWORD`.
+- Las cuatro claves Base64 del backend deben ser diferentes y decodificar exactamente 32 bytes.
+- Ninguno de estos archivos se versiona.
+
+Para generar cada clave:
 
 ```bash
-pnpm install
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
 ```
 
-### Modo desarrollo
+### 3. Levantar MySQL 8.4
+
+```bash
+cd backend
+docker compose --env-file .env.docker up -d
+docker compose --env-file .env.docker ps
+```
+
+El estado de `adp-mysql` debe aparecer como `healthy`. MySQL solo se publica en `127.0.0.1:3306`; no queda expuesto a la red local.
+
+### 4. Crear tablas y datos iniciales
+
+```bash
+npm run db:migrate:deploy
+npm run db:seed
+npm run test:integration
+```
+
+La migración crea las tablas, relaciones y restricciones. El seed carga Casanare, sus 19 municipios y la variedad `PLATANO_HARTON`.
+
+### 5. Ejecutar API y frontend
+
+Terminal para backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+Terminal para frontend, desde la raíz:
 
 ```bash
 npm run dev
 ```
 
-Luego abrir:
+Servicios:
 
-```text
-http://127.0.0.1:5173
-```
+| Componente | Dirección |
+|---|---|
+| Frontend | `http://127.0.0.1:5173` |
+| API | `http://127.0.0.1:3000/api/v1` |
+| Liveness | `http://127.0.0.1:3000/health/live` |
+| Readiness MySQL | `http://127.0.0.1:3000/health/ready` |
+| MySQL | `127.0.0.1:3306` |
 
-### WhatsApp opcional
+### Conectar DBeaver sin permisos de escritura
 
-Copia `.env.example` como `.env` y define el número en formato internacional, solo con dígitos:
+La composición crea `adp_observer`, una cuenta destinada a inspección. No usar `root` ni `adp_app` desde DBeaver.
 
-```env
-VITE_WHATSAPP_NUMBER=573001112233
-```
+1. Crear una conexión **MySQL**.
+2. Host: `127.0.0.1`.
+3. Puerto: `3306`.
+4. Base de datos: `adp`.
+5. Usuario: `adp_observer`.
+6. Contraseña: el valor local de `MYSQL_OBSERVER_PASSWORD` en `backend/.env.docker`.
+7. Para este entorno local, dejar SSL desactivado y pulsar **Test Connection**.
 
-Si la variable queda vacía, WhatsApp abre el mensaje precargado sin seleccionar destinatario.
-
-### Compilar para produccion
+Si el volumen fue creado antes de incorporar la cuenta de observación, provisionarla una vez con:
 
 ```bash
-npm run build
+cd backend
+docker compose --env-file .env.docker exec mysql sh /docker-entrypoint-initdb.d/01-create-observer.sh
 ```
 
-### Verificación
+La cuenta puede hacer `SELECT` y `SHOW VIEW`, pero no insertar, modificar ni eliminar registros.
+
+### Verificación completa
 
 ```bash
 npm run lint
 npm test
 npm run build
 npm run backend:validate
+npm --prefix backend run test:integration
 ```
 
-Las pruebas cubren el bloqueo previo a la publicación, la mejora de texto, la carga temporal de imágenes, la publicación, la habilitación de compradores y pujas, la aceptación única, la revelación del ganador, WhatsApp y el reinicio de la demo.
-
-### Estructura actual
-
-```text
-src/App.jsx              Orquestación y estado de la demo
-src/components/          Formulario, perfil, mercado, pujas y confirmación
-src/data/                Datos simulados de finca, compradores y ofertas
-src/lib/                 Validación, formato, IA simulada y WhatsApp
-src/App.test.jsx         Pruebas de interacción
-public/assets/           Fotografías locales de plátano hartón
-backend/                 API, modelos Prisma, migraciones y pruebas de Fase 2
-docs/fase-1-demo.md      Estado y límites de la Fase 1
-docs/fase-2-backend.md   Estado y límites actuales del backend
-```
-
-### Vista previa de produccion
+### Detener el entorno
 
 ```bash
-npm run preview
+cd backend
+docker compose --env-file .env.docker stop
+```
+
+`stop` conserva el volumen. No ejecutar `docker compose down -v` salvo que se quiera eliminar deliberadamente toda la base local.
+
+### WhatsApp opcional
+
+En el `.env` de la raíz se puede definir el número internacional, solo con dígitos:
+
+```env
+VITE_WHATSAPP_NUMBER=573001112233
+```
+
+Si queda vacío, WhatsApp abre el mensaje sin seleccionar destinatario.
+
+## Despliegue de producción
+
+La composición local no es una plantilla de producción. Antes de publicar ADP:
+
+1. aprovisionar MySQL 8.4 en red privada, con TLS obligatorio, backups cifrados y recuperación puntual;
+2. guardar credenciales y claves en un gestor de secretos;
+3. ejecutar `npm ci`, `npm run db:migrate:deploy` y `npm run build` dentro de `backend/`;
+4. ejecutar la API con `node backend/dist/server.js` bajo un supervisor y detrás de HTTPS;
+5. compilar el frontend con `npm ci && npm run build` y servir `dist/` mediante CDN o servidor HTTPS;
+6. configurar `CORS_ORIGINS`, proxy confiable, límites de red, observabilidad y rotación de claves;
+7. ejecutar pruebas de integración, restaurar un backup y verificar readiness antes de dirigir tráfico.
+
+El backend no debe exponerse a Internet hasta cerrar todos los criterios de seguridad y operación documentados para Fase 2.
+
+## Estructura actual
+
+```text
+src/                     Frontend React y demo de Fase 1
+public/assets/           Fotografías locales
+backend/prisma/          Schema, migraciones y seed
+backend/database/        Inicialización y seguridad local de MySQL
+backend/src/             API y lógica de Fase 2
+backend/tests/           Pruebas unitarias e integración MySQL
+docs/fase-1-demo.md      Estado y límites de la Fase 1
+docs/fase-2-backend.md   Estado y puertas de cierre de Fase 2
 ```
 
 ## Concepto

@@ -10,13 +10,17 @@ services:
       MYSQL_USER: adp_app
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD}
+      MYSQL_OBSERVER_PASSWORD: ${MYSQL_OBSERVER_PASSWORD:?define MYSQL_OBSERVER_PASSWORD}
       TZ: UTC
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_0900_ai_ci
       - --sql-mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      - --default-time-zone=+00:00
+      - --local-infile=OFF
     volumes:
       - adp_mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test:
         [
