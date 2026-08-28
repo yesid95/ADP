@@ -110,6 +110,63 @@ describe("MySQL 8.4 integration", () => {
       where: { code: "PLATANO_HARTON" }
     });
 
+    const ownProfile = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(buyerA.accessToken));
+    expect(ownProfile.status).toBe(200);
+    expect(ownProfile.body.data.contact).toMatchObject({
+      email: buyerA.email,
+      phone: buyerA.phone
+    });
+    expect(JSON.stringify(ownProfile.body)).not.toContain("Ciphertext");
+
+    const updatedBuyerName = `Buyer A ${runId}`;
+    const businessName = `Comprador privado ${runId}`;
+    const identityUpdate = await request(app)
+      .patch("/api/v1/me")
+      .set("Authorization", authorization(buyerA.accessToken))
+      .send({ displayName: updatedBuyerName });
+    expect(identityUpdate.status).toBe(200);
+    buyerA.displayName = updatedBuyerName;
+
+    const buyerProfileUpdate = await request(app)
+      .put("/api/v1/me/buyer-profile")
+      .set("Authorization", authorization(buyerA.accessToken))
+      .send({
+        businessName,
+        buyerType: "WHOLESALER",
+        description: "Perfil actualizado por integración"
+      });
+    expect(buyerProfileUpdate.status).toBe(200);
+
+    const interestsUpdate = await request(app)
+      .put("/api/v1/me/buyer-interests")
+      .set("Authorization", authorization(buyerA.accessToken))
+      .send({
+        crops: [
+          {
+            cropVarietyId: crop.id,
+            minimumQuantityKg: "500.000",
+            maximumQuantityKg: "5000.000"
+          }
+        ],
+        municipalityIds: [municipality.id]
+      });
+    expect(interestsUpdate.status).toBe(200);
+    expect(interestsUpdate.body.data).toEqual({ cropCount: 1, municipalityCount: 1 });
+
+    const farmerProfileUpdate = await request(app)
+      .put("/api/v1/me/farmer-profile")
+      .set("Authorization", authorization(farmer.accessToken))
+      .send({ publicBio: "Productor de integración en Casanare" });
+    expect(farmerProfileUpdate.status).toBe(200);
+
+    const forbiddenBuyerProfile = await request(app)
+      .put("/api/v1/me/buyer-interests")
+      .set("Authorization", authorization(farmer.accessToken))
+      .send({ crops: [], municipalityIds: [] });
+    expect(forbiddenBuyerProfile.status).toBe(403);
+
     const farmResponse = await request(app)
       .post("/api/v1/farms")
       .set("Authorization", authorization(farmer.accessToken))
@@ -195,6 +252,7 @@ describe("MySQL 8.4 integration", () => {
       expect(anonymousPayload).not.toContain(account.email);
       expect(anonymousPayload).not.toContain(account.displayName);
     }
+    expect(anonymousPayload).not.toContain(businessName);
 
     const inputs = Array.from({ length: 100 }, (_, index) => ({
       bidId: index % 2 === 0 ? bidAId : bidBId,
@@ -239,5 +297,14 @@ describe("MySQL 8.4 integration", () => {
       email: expectedBuyer.email,
       phone: expectedBuyer.phone
     });
+
+    const deleteBuyer = await request(app)
+      .delete("/api/v1/me")
+      .set("Authorization", authorization(buyerB.accessToken));
+    expect(deleteBuyer.status).toBe(204);
+    const deletedSession = await request(app)
+      .get("/api/v1/me")
+      .set("Authorization", authorization(buyerB.accessToken));
+    expect(deletedSession.status).toBe(401);
   });
 });

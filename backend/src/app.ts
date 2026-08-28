@@ -8,6 +8,7 @@ import { createHttpLogger, createLogger } from "./infrastructure/logger.js";
 import { createAuthRouter } from "./modules/auth/auth.routes.js";
 import { createBidRouter } from "./modules/bids/bid.routes.js";
 import { createMarketRouter } from "./modules/market/market.routes.js";
+import { createProfileRouter } from "./modules/profiles/profile.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/errors.js";
 
 export function createApp(): Express {
@@ -60,6 +61,7 @@ export function createApp(): Express {
 
   const api = express.Router();
   api.use("/auth", createAuthRouter());
+  api.use(createProfileRouter());
   api.use(createMarketRouter());
   api.use(createBidRouter());
   app.use("/api/v1", api);
