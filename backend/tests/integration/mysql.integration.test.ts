@@ -178,12 +178,33 @@ describe("MySQL 8.4 integration", () => {
         productiveHectares: "12.50"
       });
     expect(farmResponse.status).toBe(201);
+    const farmId = farmResponse.body.data.id as string;
+
+    const farmUpdate = await request(app)
+      .patch(`/api/v1/farms/${farmId}`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .send({
+        description: "Finca actualizada por integración",
+        roadAccessNotes: "Acceso para camión"
+      });
+    expect(farmUpdate.status).toBe(200);
+    expect(farmUpdate.body.data.description).toBe("Finca actualizada por integración");
+
+    const ownFarm = await request(app)
+      .get(`/api/v1/farms/${farmId}`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(ownFarm.status).toBe(200);
+    const farmPage = await request(app)
+      .get("/api/v1/farms?limit=1")
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(farmPage.status).toBe(200);
+    expect(farmPage.body.data[0].id).toBe(farmId);
 
     const listingResponse = await request(app)
       .post("/api/v1/listings")
       .set("Authorization", authorization(farmer.accessToken))
       .send({
-        farmId: farmResponse.body.data.id,
+        farmId,
         cropVarietyId: crop.id,
         estimatedQuantityKg: "2500.000",
         availableFromDate: new Date(Date.now() + 86_400_000)
@@ -197,10 +218,35 @@ describe("MySQL 8.4 integration", () => {
     expect(listingResponse.status).toBe(201);
     const listingId = listingResponse.body.data.id as string;
 
+    const listingUpdate = await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .send({
+        cropConditionNotes: "Lote de integración actualizado",
+        expectedPriceCopPerKg: "1775.00"
+      });
+    expect(listingUpdate.status).toBe(200);
+    expect(listingUpdate.body.data.expectedPriceCopPerKg).toBe("1775.00");
+
+    const ownListings = await request(app)
+      .get("/api/v1/me/listings?status=DRAFT&limit=10")
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(ownListings.status).toBe(200);
+    expect(ownListings.body.data.some(({ id }: { id: string }) => id === listingId)).toBe(true);
+
     const publishResponse = await request(app)
       .post(`/api/v1/listings/${listingId}/publish`)
       .set("Authorization", authorization(farmer.accessToken));
     expect(publishResponse.status).toBe(200);
+
+    const publicListings = await request(app).get(
+      `/api/v1/listings?municipalityId=${municipality.id}&cropVarietyId=${crop.id}&limit=10`
+    );
+    expect(publicListings.status).toBe(200);
+    expect(publicListings.body.data.some(({ id }: { id: string }) => id === listingId)).toBe(true);
+    const publicListing = await request(app).get(`/api/v1/listings/${listingId}`);
+    expect(publicListing.status).toBe(200);
+    expect(publicListing.body.data.id).toBe(listingId);
 
     async function submitBid(account: TestAccount, price: string, suffix: string) {
       const response = await request(app)
@@ -224,6 +270,11 @@ describe("MySQL 8.4 integration", () => {
       submitBid(buyerA, "1800.00", "a"),
       submitBid(buyerB, "1825.00", "b")
     ]);
+
+    const protectedDelete = await request(app)
+      .delete(`/api/v1/listings/${listingId}`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(protectedDelete.status).toBe(409);
 
     const revision = await request(app)
       .post(`/api/v1/bids/${bidAId}/versions`)
@@ -297,6 +348,47 @@ describe("MySQL 8.4 integration", () => {
       email: expectedBuyer.email,
       phone: expectedBuyer.phone
     });
+
+    async function createAdditionalListing(label: string) {
+      const response = await request(app)
+        .post("/api/v1/listings")
+        .set("Authorization", authorization(farmer.accessToken))
+        .send({
+          farmId,
+          cropVarietyId: crop.id,
+          estimatedQuantityKg: "1000.000",
+          availableFromDate: new Date(Date.now() + 172_800_000)
+            .toISOString()
+            .slice(0, 10),
+          cropConditionNotes: label,
+          expectedPriceCopPerKg: "1700.00",
+          allowsPartialPurchase: false,
+          bidDeadlineAt: new Date(Date.now() + 7_200_000).toISOString()
+        });
+      expect(response.status).toBe(201);
+      return response.body.data.id as string;
+    }
+
+    const closedListingId = await createAdditionalListing("Cierre manual");
+    const publishClosedListing = await request(app)
+      .post(`/api/v1/listings/${closedListingId}/publish`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(publishClosedListing.status).toBe(200);
+    const closeListingResponse = await request(app)
+      .post(`/api/v1/listings/${closedListingId}/close`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(closeListingResponse.status).toBe(204);
+
+    const cancelledListingId = await createAdditionalListing("Cancelación de borrador");
+    const cancelListingResponse = await request(app)
+      .delete(`/api/v1/listings/${cancelledListingId}`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(cancelListingResponse.status).toBe(204);
+
+    const archiveFarmResponse = await request(app)
+      .delete(`/api/v1/farms/${farmId}`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(archiveFarmResponse.status).toBe(204);
 
     const deleteBuyer = await request(app)
       .delete("/api/v1/me")
