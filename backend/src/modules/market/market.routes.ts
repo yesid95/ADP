@@ -19,6 +19,7 @@ import {
   updateDraftListing,
   updateFarm
 } from "./market-crud.service.js";
+import { getPublicCatalog } from "./catalog.service.js";
 
 const uuidSchema = z.uuid();
 const quantityDecimal = z.string().regex(/^(?:0|[1-9]\d{0,8})(?:\.\d{1,3})?$/);
@@ -94,6 +95,10 @@ const ownListingQuerySchema = pageSchema.extend({
 
 export function createMarketRouter(): Router {
   const router = Router();
+
+  router.get("/catalogs", async (_request, response) => {
+    response.json({ data: await getPublicCatalog() });
+  });
 
   router.get("/listings", async (request, response) => {
     response.json(await listPublicListings(publicListingQuerySchema.parse(request.query)));

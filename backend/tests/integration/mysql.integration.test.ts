@@ -115,6 +115,12 @@ describe("MySQL 8.4 integration", () => {
     expect(anonymousViewColumns.map(({ columnName }) => columnName)).toContain(
       "anonymous_label"
     );
+    const catalog = await request(app).get("/api/v1/catalogs");
+    expect(catalog.status).toBe(200);
+    expect(catalog.body.data.departments[0].municipalities).toHaveLength(19);
+    expect(catalog.body.data.crops).toContainEqual(
+      expect.objectContaining({ code: "PLATANO_HARTON" })
+    );
     await expect(prisma.municipality.count()).resolves.toBe(19);
     await expect(
       prisma.cropVariety.findUnique({ where: { code: "PLATANO_HARTON" } })
