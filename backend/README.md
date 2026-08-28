@@ -161,16 +161,16 @@ backend/
 └── tests/
 ~~~
 
-## Límites pendientes antes de producción
+## Trabajo pendiente para cerrar Fase 2
 
-- Ejecutar la migración y pruebas concurrentes contra MySQL 8.4 real en CI.
-- Implementar envío real de correo; el token de verificación solo se retorna fuera de producción.
-- Implementar activación y verificación TOTP; las tablas MFA ya existen.
-- Separar credenciales MySQL de identidad, mercado y auditoría.
-- Aplicar permisos INSERT-only a auditoría y sin UPDATE/DELETE a bid_versions.
-- Integrar almacenamiento privado y análisis de fotografías.
-- Agregar recuperación de contraseña y rotación operativa de claves.
-- Probar restauración de backup y recuperación puntual.
-- Añadir pruebas de integración de autorización y concurrencia con base efímera.
+1. **MySQL real:** aplicar migración y seed desde cero, ejecutar el ciclo completo e incorporarlo al CI.
+2. **API CRUD:** perfiles, intereses, actualización/archivo de fincas y publicaciones, fotografías privadas, historial y paginación.
+3. **Autenticación y administración:** correo real, recuperación/cambio de contraseña, administración de roles y TOTP con recuperación.
+4. **Seguridad MySQL:** cuentas técnicas separadas, GRANT mínimos, vista anónima, auditoría INSERT-only y versiones sin UPDATE/DELETE.
+5. **Integración y concurrencia:** autorización negativa, privacidad, idempotencia y carrera de adjudicación sobre base real.
+6. **Frontend:** reemplazar estado y datos simulados por sesión y API persistente.
+7. **Operación:** EXPLAIN, pruebas de volumen, observabilidad, backup, recuperación puntual y restauración medida.
+
+Además, la auditoría debe encadenar cada `event_hash` con `previous_hash`, la rotación de claves debe tener procedimiento operativo y cada lectura permitida o denegada de contacto debe quedar registrada.
 
 El servidor no debe publicarse en Internet hasta cerrar esos puntos.

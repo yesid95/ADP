@@ -57,3 +57,31 @@ flowchart LR
 La verificación sin MySQL cubre tipos, criptografía, Argon2id, tokens, políticas monetarias, contrato del esquema, restricciones del SQL y superficie HTTP.
 
 La validación con MySQL real queda como siguiente puerta: migración, seed, ciclo completo y carrera concurrente de adjudicación.
+
+## Plan de cierre de los siete frentes
+
+Este documento diferencia código existente de evidencia de cierre. Un frente no se marca como terminado solo porque tenga tablas o servicios: debe superar su prueba operativa correspondiente.
+
+| # | Frente | Ya existe | Falta para aceptar |
+|---:|---|---|---|
+| 1 | MySQL 8.4 real | Schema, SQL inicial, seed y Compose | Aplicar desde cero, validar restricciones, ciclo E2E y CI efímero |
+| 2 | API CRUD | Registro, finca, publicación, oferta, revisión, comparación y adjudicación | CRUD de perfiles/intereses/fincas/publicaciones, fotografías, historial y paginación |
+| 3 | Autenticación y administración | Argon2id, verificación por token, JWT, refresh rotatorio y bloqueo | Correo real, cambio/recuperación de contraseña, administración de roles y MFA TOTP obligatorio |
+| 4 | Seguridad MySQL | Cifrado de PII, hashes ciegos, CHECK, FK y HMAC de eventos | Cuentas/GRANT, vista anónima, tablas inmutables y cadena `previous_hash` |
+| 5 | Integración y concurrencia | Pruebas unitarias, contractuales y HTTP sin base | Suite sobre MySQL, pruebas negativas de autorización y adjudicación concurrente |
+| 6 | Frontend persistente | Demo React completa con datos simulados | Cliente API, sesión, estados de red y recorrido comercial persistente |
+| 7 | Operación y recuperación | Health checks y logging con redacción | EXPLAIN, volumen, métricas, backup/PITR, restauración y medición RPO/RTO |
+
+### Orden obligatorio
+
+1. establecer MySQL real y CI;
+2. completar API y autenticación;
+3. aplicar permisos e inmutabilidad en la base;
+4. probar integración, privacidad y concurrencia;
+5. conectar el frontend;
+6. medir rendimiento y demostrar recuperación;
+7. auditar todos los criterios y actualizar el estado documental.
+
+### Definición de terminado
+
+Fase 2 termina únicamente cuando un entorno limpio puede migrar y cargar datos, el frontend completa el ciclo comercial con persistencia, solicitudes concurrentes producen una sola adjudicación, los datos privados están aislados por permisos efectivos, MFA protege administración y un respaldo real se restaura dentro de los objetivos documentados.

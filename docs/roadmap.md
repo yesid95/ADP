@@ -16,7 +16,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 |---|---|---|
 | Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
 | Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
-| Fase 2 | En desarrollo | Base ejecutable de backend, modelos, migración, autenticación y reglas críticas implementadas en rama dedicada |
+| Fase 2 | En desarrollo | Núcleo backend implementado; faltan siete frentes de integración, seguridad, frontend y operación para cerrar la fase |
 
 ## Fase 0 - Preparacion del proyecto
 
@@ -125,6 +125,8 @@ La especificación de tablas, relaciones, columnas, tipos, índices, seguridad y
 ### Criterio de salida
 
 El sistema guarda usuarios, fincas, cosechas y ofertas en MySQL. Un comprador puede ofertar y revisar sus condiciones sin borrar el historial, y un finquero puede aceptar una sola oferta válida aun bajo solicitudes concurrentes. Los contactos permanecen cifrados y ocultos hasta la adjudicación, y el esquema puede restaurarse desde respaldos probados.
+
+El estado verificable de los siete frentes de cierre se mantiene en `docs/fase-2-backend.md`. Mientras MySQL real, CRUD, MFA, permisos, concurrencia, frontend persistente y restauración no estén demostrados, la fase permanece en desarrollo.
 
 ## Fase 3 - Pujas anonimas en tiempo real
 

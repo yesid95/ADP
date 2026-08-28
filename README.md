@@ -6,7 +6,7 @@ La propuesta busca resolver un problema simple pero fuerte: el productor no siem
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 terminada; backend de Fase 2 iniciado en la rama `codex/fase-2-backend`.
+**Fase actual:** Fase 1 terminada; Fase 2 en desarrollo en la rama `codex/fase-2-backend`.
 
 La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
@@ -42,6 +42,22 @@ Antes de considerar terminada la fase faltan la validación integral sobre MySQL
 El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
 
 La implementación ejecutable y su estado están en `backend/README.md` y `docs/fase-2-backend.md`.
+
+### Estado verificable de cierre de Fase 2
+
+La rama ya contiene el núcleo ejecutable: 25 modelos Prisma, migración inicial, autenticación y sesiones, cifrado de contactos, fincas, publicaciones, ofertas versionadas, adjudicación transaccional, idempotencia y pruebas sin base. Esto todavía no equivale a una Fase 2 terminada.
+
+| Frente de cierre | Estado actual | Evidencia que falta para cerrarlo |
+|---|---|---|
+| MySQL 8.4 real | Pendiente de integración | Migración y seed desde cero, ciclo completo y CI con MySQL |
+| API CRUD | Parcial | Perfiles, intereses, edición/archivo, fotografías e historial propio |
+| Autenticación y administración | Parcial | Correo real, recuperación de contraseña, administración y MFA TOTP |
+| Seguridad efectiva en MySQL | Parcial | Cuentas separadas, GRANT, vistas, inmutabilidad y auditoría encadenada |
+| Integración y concurrencia | Pendiente | Autorización con base real y carrera concurrente de adjudicación |
+| Frontend persistente | Pendiente | Sustituir datos simulados por autenticación y API real |
+| Operación y recuperación | Pendiente | EXPLAIN, volumen, observabilidad, backup, PITR y restauración medida |
+
+El detalle, orden de ejecución y criterio de salida están en `docs/fase-2-backend.md`. Las fases 3 a 5 —tiempo real, IA real y reputación— no forman parte de esta puerta de cierre.
 
 ## Ejecutar el proyecto
 
