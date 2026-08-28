@@ -25,7 +25,11 @@ const buyerTypeSchema = z.enum([
 const registerSchema = z.object({
   displayName: z.string().trim().min(2).max(120),
   email: z.email().max(254),
-  phone: z.string().trim().max(20).optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+[1-9]\d{7,14}$/, "phone must use E.164 format")
+    .optional(),
   password: z.string().min(12).max(128),
   roles: z.array(roleSchema).min(1).max(2).transform((roles) => [...new Set(roles)]),
   buyerType: buyerTypeSchema.optional()

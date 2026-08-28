@@ -37,12 +37,16 @@ export function AuthPanel({ client, onAuthenticated, initialNotice }) {
     setBusy(true);
     setError("");
     try {
+      const trimmedPhone = registration.phone.trim();
+      const normalizedPhone = /^\d{10}$/.test(trimmedPhone)
+        ? `+57${trimmedPhone}`
+        : trimmedPhone;
       const response = await client.request("/auth/register", {
         method: "POST",
         body: {
           displayName: registration.displayName,
           email: registration.email,
-          ...(registration.phone ? { phone: registration.phone } : {}),
+          ...(normalizedPhone ? { phone: normalizedPhone } : {}),
           password: registration.password,
           roles: [registration.role],
           ...(registration.role === "BUYER" ? { buyerType: registration.buyerType } : {})
@@ -136,8 +140,8 @@ export function AuthPanel({ client, onAuthenticated, initialNotice }) {
               <input required type="email" value={registration.email} onChange={(event) => setRegistration({ ...registration, email: event.target.value })} />
             </label>
             <label className="form-field">
-              Teléfono E.164 (opcional)
-              <input placeholder="+573001112233" value={registration.phone} onChange={(event) => setRegistration({ ...registration, phone: event.target.value })} />
+              Teléfono (opcional)
+              <input placeholder="3123902469 o +573123902469" value={registration.phone} onChange={(event) => setRegistration({ ...registration, phone: event.target.value })} />
             </label>
             <label className="form-field">
               Contraseña (mínimo 12 caracteres)

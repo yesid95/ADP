@@ -24,7 +24,9 @@ const envSchema = z.object({
   TRUST_PROXY: booleanFromString,
   CORS_ORIGINS: z
     .string()
-    .default("http://127.0.0.1:5173,http://localhost:5173")
+    .default(
+      "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174,http://localhost:5174"
+    )
     .transform((value) =>
       value
         .split(",")
