@@ -47,7 +47,7 @@ Identidad pública mínima compartida por los demás módulos.
 |---|---|---:|---|
 | id | CHAR(36) ASCII | No | PK |
 | display_name | VARCHAR(120) | No | Nombre público, entre 2 y 120 caracteres |
-| status | VARCHAR(20) | No | CHECK: PENDING, ACTIVE, SUSPENDED, DELETED |
+| status | ENUM | No | PENDING, ACTIVE, SUSPENDED, DELETED |
 | created_at | DATETIME(3) | No | DEFAULT CURRENT_TIMESTAMP(3) |
 | updated_at | DATETIME(3) | No | Gestionado por Prisma |
 | deleted_at | DATETIME(3) | Sí | Obligatorio cuando status = DELETED |
@@ -99,7 +99,7 @@ El hash Argon2id contiene algoritmo, parámetros, salt y resultado. No se crean 
 | Columna | Tipo | Nulo | Clave / regla |
 |---|---|---:|---|
 | user_id | CHAR(36) ASCII | No | PK parcial, FK → users.id |
-| role_code | VARCHAR(20) | No | PK parcial; CHECK: FARMER, BUYER, ADMIN |
+| role_code | ENUM | No | PK parcial; FARMER, BUYER, ADMIN |
 | assigned_by_user_id | CHAR(36) ASCII | Sí | FK → users.id, ON DELETE SET NULL |
 | assigned_at | DATETIME(3) | No | UTC |
 
@@ -138,7 +138,7 @@ Tokens de un solo uso para verificación y recuperación.
 |---|---|---:|---|
 | id | CHAR(36) ASCII | No | PK |
 | user_id | CHAR(36) ASCII | No | FK → users.id, ON DELETE CASCADE |
-| purpose | VARCHAR(30) | No | CHECK: VERIFY_EMAIL, VERIFY_PHONE, RESET_PASSWORD |
+| purpose | ENUM | No | VERIFY_EMAIL, VERIFY_PHONE, RESET_PASSWORD |
 | token_hash | BINARY(32) | No | UNIQUE |
 | expires_at | DATETIME(3) | No | Posterior a created_at |
 | used_at | DATETIME(3) | Sí | Uso único |
@@ -152,7 +152,7 @@ Tokens de un solo uso para verificación y recuperación.
 |---|---|---:|---|
 | id | CHAR(36) ASCII | No | PK |
 | user_id | CHAR(36) ASCII | No | FK → users.id, ON DELETE CASCADE |
-| factor_type | VARCHAR(20) | No | CHECK: TOTP |
+| factor_type | ENUM | No | TOTP |
 | secret_ciphertext | VARBINARY(512) | No | Cifrado autenticado |
 | key_version | SMALLINT UNSIGNED | No | Versión de la clave |
 | enabled_at | DATETIME(3) | No | UTC |
@@ -201,7 +201,7 @@ Catálogo cargado por migración o seed controlado.
 |---|---|---:|---|
 | user_id | CHAR(36) ASCII | No | PK, FK → users.id, ON DELETE RESTRICT |
 | public_bio | TEXT | Sí | Máximo lógico de 2.000 caracteres |
-| verification_status | VARCHAR(20) | No | CHECK: UNVERIFIED, PENDING, VERIFIED, REJECTED |
+| verification_status | ENUM | No | UNVERIFIED, PENDING, VERIFIED, REJECTED |
 | created_at | DATETIME(3) | No | UTC |
 | updated_at | DATETIME(3) | No | UTC |
 
@@ -211,9 +211,9 @@ Catálogo cargado por migración o seed controlado.
 |---|---|---:|---|
 | user_id | CHAR(36) ASCII | No | PK, FK → users.id, ON DELETE RESTRICT |
 | business_name | VARCHAR(160) | Sí | Empresa o nombre comercial |
-| buyer_type | VARCHAR(30) | No | CHECK: WHOLESALER, DISTRIBUTOR, STORE, RESTAURANT, TRANSPORTER |
+| buyer_type | ENUM | No | WHOLESALER, DISTRIBUTOR, STORE, RESTAURANT, TRANSPORTER |
 | description | TEXT | Sí | Máximo lógico de 2.000 caracteres |
-| verification_status | VARCHAR(20) | No | CHECK: UNVERIFIED, PENDING, VERIFIED, REJECTED |
+| verification_status | ENUM | No | UNVERIFIED, PENDING, VERIFIED, REJECTED |
 | created_at | DATETIME(3) | No | UTC |
 | updated_at | DATETIME(3) | No | UTC |
 
@@ -232,7 +232,7 @@ Catálogo cargado por migración o seed controlado.
 | description | TEXT | Sí | Máximo lógico de 2.000 caracteres |
 | road_access_notes | VARCHAR(500) | Sí | Sin instrucciones privadas exactas |
 | productive_hectares | DECIMAL(10,2) | Sí | CHECK mayor que 0 |
-| status | VARCHAR(20) | No | CHECK: DRAFT, ACTIVE, SUSPENDED, ARCHIVED |
+| status | ENUM | No | DRAFT, ACTIVE, SUSPENDED, ARCHIVED |
 | created_at | DATETIME(3) | No | UTC |
 | updated_at | DATETIME(3) | No | UTC |
 | deleted_at | DATETIME(3) | Sí | Borrado lógico |
@@ -296,7 +296,7 @@ Clave primaria: (buyer_user_id, municipality_id).
 | expected_price_cop_per_kg | DECIMAL(18,2) | Sí | CHECK mayor que 0 |
 | allows_partial_purchase | BOOLEAN | No | DEFAULT FALSE |
 | bid_deadline_at | DATETIME(3) | No | UTC |
-| status | VARCHAR(20) | No | CHECK: DRAFT, OPEN, CLOSED, AWARDED, CANCELLED |
+| status | ENUM | No | DRAFT, OPEN, CLOSED, AWARDED, CANCELLED |
 | published_at | DATETIME(3) | Sí | Obligatorio al pasar a OPEN |
 | closed_at | DATETIME(3) | Sí | Obligatorio para estados terminales |
 | created_at | DATETIME(3) | No | UTC |
@@ -349,7 +349,7 @@ Identidad estable de una oferta. Las condiciones económicas viven en bid_versio
 | listing_id | CHAR(36) ASCII | No | FK → harvest_listings.id, ON DELETE RESTRICT |
 | buyer_user_id | CHAR(36) ASCII | No | FK → users.id, ON DELETE RESTRICT |
 | anonymous_label | VARCHAR(16) ASCII | No | Ejemplo: A, B, C |
-| status | VARCHAR(20) | No | CHECK: SUBMITTED, WITHDRAWN, ACCEPTED, REJECTED, EXPIRED |
+| status | ENUM | No | SUBMITTED, WITHDRAWN, ACCEPTED, REJECTED, EXPIRED |
 | current_version_no | SMALLINT UNSIGNED | No | Mayor que 0 |
 | submitted_at | DATETIME(3) | No | UTC |
 | withdrawn_at | DATETIME(3) | Sí | Solo para WITHDRAWN |
@@ -487,7 +487,7 @@ Registro técnico append-only. No contiene cuerpos completos de solicitudes.
 | action_code | VARCHAR(80) ASCII | No | Acción normalizada |
 | entity_type | VARCHAR(40) ASCII | No | Tipo de objetivo |
 | entity_id | CHAR(36) ASCII | Sí | Identificador del objetivo |
-| outcome | VARCHAR(20) ASCII | No | CHECK: SUCCESS, DENIED, FAILED |
+| outcome | ENUM | No | SUCCESS, DENIED, FAILED |
 | request_id | CHAR(36) ASCII | No | Correlación |
 | ip_hash | BINARY(32) | Sí | Seudonimizado |
 | metadata | JSON | Sí | Lista blanca de campos |

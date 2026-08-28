@@ -16,7 +16,7 @@ Finquero publica cosecha -> comprador puja -> IA compara -> finquero acepta -> c
 |---|---|---|
 | Fase 0 | Terminada | Repositorio, documentación y flujo de trabajo disponibles |
 | Fase 1 | Terminada y verificada | Demo React/Vite navegable, responsive y cubierta por pruebas |
-| Fase 2 | Siguiente | Backend, persistencia, autenticación y reglas reales de negocio |
+| Fase 2 | En desarrollo | Base ejecutable de backend, modelos, migración, autenticación y reglas críticas implementadas en rama dedicada |
 
 ## Fase 0 - Preparacion del proyecto
 
@@ -289,12 +289,14 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 
 ### Backend
 
-- [ ] Crear API Node.js + Express.
-- [ ] Configurar Prisma + MySQL.
-- [ ] Definir modelos.
-- [ ] Implementar autenticación.
-- [ ] Implementar reglas de puja.
-- [ ] Implementar endpoint de aceptación.
+- [x] Crear base de API Node.js + Express.
+- [x] Configurar Prisma para MySQL.
+- [x] Definir modelos y migración inicial.
+- [x] Implementar núcleo de autenticación y sesiones.
+- [x] Implementar reglas y versiones de oferta.
+- [x] Implementar endpoint transaccional de aceptación.
+- [ ] Validar ciclo completo contra MySQL 8.4 en CI.
+- [ ] Separar cuentas MySQL y completar hardening de producción.
 - [x] Documentar arquitectura, relaciones, columnas, seguridad y plan de pruebas de la base de datos.
 
 ### IA

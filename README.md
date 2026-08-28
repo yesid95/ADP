@@ -6,7 +6,7 @@ La propuesta busca resolver un problema simple pero fuerte: el productor no siem
 
 ## Estado del proyecto
 
-**Fase actual:** Fase 1 terminada; arquitectura de datos y seguridad de Fase 2 documentada.
+**Fase actual:** Fase 1 terminada; backend de Fase 2 iniciado en la rama `codex/fase-2-backend`.
 
 La demo funcional está implementada como una aplicación **React + Vite** con datos simulados, estado en memoria y pruebas automáticas. Permite recorrer el flujo principal del producto:
 
@@ -27,18 +27,21 @@ Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> fi
 - Cierre por WhatsApp con mensaje dinámico y destinatario opcional por entorno.
 - Acción para reiniciar y repetir la demo.
 
-### Pendiente para Fase 2
+### Avance de Fase 2 en la rama dedicada
 
-- Backend Node.js + Express.
-- Base de datos MySQL 8.4 con InnoDB.
-- Prisma con migraciones y llaves foráneas reales.
-- Autenticación con Argon2id, sesiones rotatorias y MFA administrativo.
-- Separación y cifrado de contactos privados.
-- Perfiles, fincas, publicaciones y ofertas versionadas persistidas.
-- Adjudicación única protegida por transacción y restricciones.
-- Auditoría, permisos mínimos y restauración de respaldos.
+- Backend Node.js + Express y TypeScript estricto.
+- Prisma para MySQL 8.4 con 25 modelos, migración inicial, llaves foráneas y restricciones reales.
+- Registro, verificación de correo, Argon2id, JWT corto y refresh token rotatorio.
+- Separación y cifrado autenticado de contactos privados.
+- Fincas, publicaciones y ofertas con versiones inmutables.
+- Adjudicación única protegida por transacción serializable, bloqueo de filas e idempotencia.
+- Auditoría autenticada y pruebas unitarias/contractuales del backend.
+
+Antes de considerar terminada la fase faltan la validación integral sobre MySQL 8.4, MFA operativo, correo real, cuentas de base de datos con privilegios separados, pruebas de concurrencia y restauración de respaldos.
 
 El diseño completo está en `docs/fase-2-base-de-datos/README.md`.
+
+La implementación ejecutable y su estado están en `backend/README.md` y `docs/fase-2-backend.md`.
 
 ## Ejecutar el proyecto
 
@@ -95,6 +98,7 @@ npm run build
 npm run lint
 npm test
 npm run build
+npm run backend:validate
 ```
 
 Las pruebas cubren el bloqueo previo a la publicación, la mejora de texto, la carga temporal de imágenes, la publicación, la habilitación de compradores y pujas, la aceptación única, la revelación del ganador, WhatsApp y el reinicio de la demo.
@@ -108,7 +112,9 @@ src/data/                Datos simulados de finca, compradores y ofertas
 src/lib/                 Validación, formato, IA simulada y WhatsApp
 src/App.test.jsx         Pruebas de interacción
 public/assets/           Fotografías locales de plátano hartón
+backend/                 API, modelos Prisma, migraciones y pruebas de Fase 2
 docs/fase-1-demo.md      Estado y límites de la Fase 1
+docs/fase-2-backend.md   Estado y límites actuales del backend
 ```
 
 ### Vista previa de produccion
@@ -179,6 +185,8 @@ La guia principal del proyecto esta en:
 - `docs/fase-2-base-de-datos/logica-e-integridad.md`
 - `docs/fase-2-base-de-datos/seguridad-de-la-informacion.md`
 - `docs/fase-2-base-de-datos/plan-de-implementacion.md`
+- `docs/fase-2-backend.md`
+- `backend/README.md`
 - `docs/git-workflow.md`
 - `docs/llano/guia-proyecto-plataneros.md`
 - `docs/llano/plataneros-marketplace-pujas.md`
