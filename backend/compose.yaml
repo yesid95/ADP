@@ -11,6 +11,12 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?define MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?define MYSQL_ROOT_PASSWORD}
       MYSQL_OBSERVER_PASSWORD: ${MYSQL_OBSERVER_PASSWORD:?define MYSQL_OBSERVER_PASSWORD}
+      MYSQL_AUTH_PASSWORD: ${MYSQL_AUTH_PASSWORD:?define MYSQL_AUTH_PASSWORD}
+      MYSQL_MARKET_PASSWORD: ${MYSQL_MARKET_PASSWORD:?define MYSQL_MARKET_PASSWORD}
+      MYSQL_AUDIT_PASSWORD: ${MYSQL_AUDIT_PASSWORD:?define MYSQL_AUDIT_PASSWORD}
+      MYSQL_AUDITOR_PASSWORD: ${MYSQL_AUDITOR_PASSWORD:?define MYSQL_AUDITOR_PASSWORD}
+      MYSQL_MIGRATOR_PASSWORD: ${MYSQL_MIGRATOR_PASSWORD:?define MYSQL_MIGRATOR_PASSWORD}
+      MYSQL_BACKUP_PASSWORD: ${MYSQL_BACKUP_PASSWORD:?define MYSQL_BACKUP_PASSWORD}
       TZ: UTC
     command:
       - --character-set-server=utf8mb4
@@ -21,6 +27,7 @@ services:
     volumes:
       - adp_mysql_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d:ro
+      - ./database/security:/opt/adp/security:ro
     healthcheck:
       test:
         [

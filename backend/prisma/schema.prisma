@@ -527,3 +527,12 @@ model AuditEvent {
   @@index([requestId], map: "audit_events_request_idx")
   @@map("audit_events")
 }
+
+model AuditChainHead {
+  id          Int      @id @db.UnsignedTinyInt
+  currentHash Bytes?   @map("current_hash") @db.Binary(32)
+  lastEventId BigInt?  @map("last_event_id") @db.UnsignedBigInt
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("audit_chain_heads")
+}

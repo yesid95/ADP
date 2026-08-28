@@ -11,7 +11,7 @@ describe("database contract", () => {
   it("contains the 25 documented models and real foreign keys", async () => {
     const schema = await readFile(schemaPath, "utf8");
     const models = schema.match(/^model\s+[A-Za-z][A-Za-z0-9]*\s+\{/gm) ?? [];
-    expect(models).toHaveLength(25);
+    expect(models).toHaveLength(26);
     expect(schema).toContain('relationMode = "foreignKeys"');
     expect(schema).toContain("@@unique([listingId, bidId]");
     expect(schema).toContain("@@id([bidId, versionNo])");
