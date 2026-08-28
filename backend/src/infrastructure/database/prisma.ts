@@ -16,7 +16,7 @@ function createPrismaClient() {
     idleTimeout: 60,
     ...(env.NODE_ENV === "production"
       ? { ssl: { rejectUnauthorized: true } }
-      : {})
+      : { allowPublicKeyRetrieval: true })
   });
 
   return new PrismaClient({ adapter });

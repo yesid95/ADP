@@ -1,0 +1,83 @@
+name: Phase 2 CI
+
+on:
+  push:
+    branches:
+      - main
+      - codex/fase-2-backend
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mysql://adp_app:adp_ci_password@127.0.0.1:3306/adp
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 3306
+      DATABASE_USER: adp_app
+      DATABASE_PASSWORD: adp_ci_password
+      DATABASE_NAME: adp
+      DATABASE_CONNECTION_LIMIT: 20
+      JWT_SECRET_BASE64: QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=
+      CONTACT_ENCRYPTION_KEY_BASE64: QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI=
+      CONTACT_LOOKUP_KEY_BASE64: Q0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0NDQ0M=
+      AUDIT_HMAC_KEY_BASE64: REREREREREREREREREREREREREREREREREREREREREQ=
+      ACCESS_TOKEN_TTL_MINUTES: 10
+      REFRESH_TOKEN_TTL_DAYS: 30
+      TRUST_PROXY: "false"
+      CORS_ORIGINS: http://127.0.0.1:5173
+      LOG_LEVEL: silent
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: adp
+          MYSQL_USER: adp_app
+          MYSQL_PASSWORD: adp_ci_password
+          MYSQL_ROOT_PASSWORD: adp_ci_root_password
+          TZ: UTC
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -padp_ci_root_password --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Validate frontend
+        run: npm run lint && npm test && npm run build
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Migrate and seed MySQL
+        working-directory: backend
+        run: npm run db:migrate:deploy && npm run db:seed
+
+      - name: Run MySQL integration and concurrency tests
+        working-directory: backend
+        run: npm run test:integration
+
+      - name: Validate backend
+        working-directory: backend
+        run: npm run validate
