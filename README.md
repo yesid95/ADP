@@ -4,6 +4,106 @@
 
 La propuesta busca resolver un problema simple pero fuerte: el productor no siempre necesita la oferta mas alta, sino la oferta que mas le conviene en valor real, considerando precio, transporte, anticipo, recoleccion, tiempo de pago, compra total y continuidad comercial.
 
+## Estado del proyecto
+
+**Fase actual:** Fase 1 - Demo navegable.
+
+La primera demo ya esta implementada como una aplicacion **React + Vite** con datos simulados. Permite revisar el flujo principal del producto:
+
+```text
+Finquero publica cosecha -> compradores hacen pujas anonimas -> IA compara -> finquero acepta -> cierre por WhatsApp
+```
+
+### Implementado en Fase 1
+
+- Pantalla de perfil de finca.
+- Publicacion de cosecha de platano harton.
+- Asistente simulado para mejorar el texto comercial de la publicacion.
+- Busqueda/mercado con compradores sugeridos.
+- Tres pujas anonimas con condiciones diferentes.
+- Comparador visual de precio bruto, valor neto, transporte, anticipo y plazo de pago.
+- Recomendacion IA simulada para elegir por valor total.
+- Accion para aceptar una puja.
+- Enlace de cierre por WhatsApp.
+
+### Pendiente para Fase 2
+
+- Backend Node.js + Express.
+- Base de datos MySQL.
+- Prisma.
+- Autenticacion.
+- Pujas reales persistidas.
+- Socket.IO para tiempo real.
+- Integracion real del servicio IA.
+
+## Ejecutar el proyecto
+
+### Requisitos
+
+- Node.js 20 o superior.
+- npm o pnpm.
+
+### Instalacion
+
+Con npm:
+
+```bash
+npm install
+```
+
+Con pnpm:
+
+```bash
+pnpm install
+```
+
+### Modo desarrollo
+
+```bash
+npm run dev
+```
+
+Luego abrir:
+
+```text
+http://127.0.0.1:5173
+```
+
+### Compilar para produccion
+
+```bash
+npm run build
+```
+
+### Vista previa de produccion
+
+```bash
+npm run preview
+```
+
+## Nota de instalacion local
+
+Durante la implementacion, la instalacion de dependencias en esta maquina fallo por verificacion de certificado contra el registro de npm:
+
+```text
+UNABLE_TO_VERIFY_LEAF_SIGNATURE
+```
+
+Si aparece el mismo problema, se puede probar temporalmente:
+
+```bash
+npm install --strict-ssl=false
+```
+
+o:
+
+```bash
+pnpm config set strict-ssl false
+pnpm install
+```
+
+Esa configuracion debe usarse solo si la red local o el certificado corporativo bloquea la descarga normal de dependencias.
+
 ## Concepto
 
 Un finquero crea su perfil, publica una cosecha y recibe pujas anonimas. La IA ayuda a mejorar la publicacion y luego compara las ofertas para que el productor pueda decidir con mas informacion.
@@ -59,6 +159,7 @@ La guia principal del proyecto esta en:
 
 - `CONTRIBUTING.md`
 - `docs/roadmap.md`
+- `docs/fase-1-demo.md`
 - `docs/git-workflow.md`
 - `docs/llano/guia-proyecto-plataneros.md`
 - `docs/llano/plataneros-marketplace-pujas.md`

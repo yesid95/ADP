@@ -40,6 +40,8 @@ El equipo puede clonar el repositorio, entender la idea, crear ramas y empezar a
 
 **Objetivo:** construir una maqueta funcional para presentar la idea con claridad.
 
+**Estado:** implementada como primera demo React/Vite. Ver `docs/fase-1-demo.md`.
+
 ### Alcance
 
 - Interfaz React mobile-first.
@@ -254,7 +256,7 @@ ADP puede operar como plataforma para una asociacion, feria agricola, programa m
 ### Frontend
 
 - Crear estructura React + Vite.
-- Diseñar layout mobile-first.
+- Disenar layout mobile-first.
 - Crear pantallas de finquero.
 - Crear vista de publicacion.
 - Crear bandeja de pujas.
