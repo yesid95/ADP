@@ -40,6 +40,13 @@ const envSchema = z.object({
   DATABASE_PASSWORD: z.string().min(1),
   DATABASE_NAME: z.string().min(1),
   DATABASE_CONNECTION_LIMIT: z.coerce.number().int().min(1).max(100).default(10),
+  PRIVATE_UPLOAD_DIR: z.string().min(1).default("./uploads"),
+  MAX_PHOTO_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1_024)
+    .max(25 * 1_024 * 1_024)
+    .default(10 * 1_024 * 1_024),
   JWT_SECRET_BASE64: base64Key,
   CONTACT_ENCRYPTION_KEY_BASE64: base64Key,
   CONTACT_LOOKUP_KEY_BASE64: base64Key,

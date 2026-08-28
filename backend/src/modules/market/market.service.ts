@@ -247,7 +247,7 @@ export async function listOpenHarvestListings() {
       },
       photos: {
         orderBy: { sortOrder: "asc" },
-        select: { id: true, storageKey: true, mimeType: true, sortOrder: true }
+        select: { id: true, mimeType: true, sizeBytes: true, sortOrder: true }
       }
     },
     orderBy: [{ availableFromDate: "asc" }, { createdAt: "desc" }],

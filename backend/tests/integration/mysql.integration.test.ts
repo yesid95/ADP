@@ -234,6 +234,43 @@ describe("MySQL 8.4 integration", () => {
     expect(ownListings.status).toBe(200);
     expect(ownListings.body.data.some(({ id }: { id: string }) => id === listingId)).toBe(true);
 
+    const jpegBytes = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+    const pngBytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const firstPhoto = await request(app)
+      .post(`/api/v1/listings/${listingId}/photos`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .set("Content-Type", "image/jpeg")
+      .set("X-Sort-Order", "0")
+      .send(jpegBytes);
+    expect(firstPhoto.status).toBe(201);
+    const firstPhotoId = firstPhoto.body.data.id as string;
+    const secondPhoto = await request(app)
+      .post(`/api/v1/listings/${listingId}/photos`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .set("Content-Type", "image/png")
+      .set("X-Sort-Order", "1")
+      .send(pngBytes);
+    expect(secondPhoto.status).toBe(201);
+    const secondPhotoId = secondPhoto.body.data.id as string;
+    const duplicatePhoto = await request(app)
+      .post(`/api/v1/listings/${listingId}/photos`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .set("Content-Type", "image/jpeg")
+      .set("X-Sort-Order", "2")
+      .send(jpegBytes);
+    expect(duplicatePhoto.status).toBe(409);
+
+    const reorderPhotos = await request(app)
+      .put(`/api/v1/listings/${listingId}/photos/order`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .send({ photoIds: [secondPhotoId, firstPhotoId] });
+    expect(reorderPhotos.status).toBe(204);
+    const ownPhoto = await request(app)
+      .get(`/api/v1/me/listings/${listingId}/photos/${firstPhotoId}`)
+      .set("Authorization", authorization(farmer.accessToken));
+    expect(ownPhoto.status).toBe(200);
+    expect(ownPhoto.headers["content-type"]).toContain("image/jpeg");
+
     const publishResponse = await request(app)
       .post(`/api/v1/listings/${listingId}/publish`)
       .set("Authorization", authorization(farmer.accessToken));
@@ -244,9 +281,23 @@ describe("MySQL 8.4 integration", () => {
     );
     expect(publicListings.status).toBe(200);
     expect(publicListings.body.data.some(({ id }: { id: string }) => id === listingId)).toBe(true);
+    expect(JSON.stringify(publicListings.body)).not.toContain("storageKey");
+    expect(JSON.stringify(publicListings.body)).not.toContain("harvest/");
     const publicListing = await request(app).get(`/api/v1/listings/${listingId}`);
     expect(publicListing.status).toBe(200);
     expect(publicListing.body.data.id).toBe(listingId);
+    const publicPhoto = await request(app).get(
+      `/api/v1/listings/${listingId}/photos/${firstPhotoId}`
+    );
+    expect(publicPhoto.status).toBe(200);
+    expect(publicPhoto.headers["cache-control"]).toBe("public, max-age=300");
+
+    const immutablePhotoSet = await request(app)
+      .post(`/api/v1/listings/${listingId}/photos`)
+      .set("Authorization", authorization(farmer.accessToken))
+      .set("Content-Type", "image/jpeg")
+      .send(Buffer.from([0xff, 0xd8, 0xff, 0x00, 0xd9]));
+    expect(immutablePhotoSet.status).toBe(409);
 
     async function submitBid(account: TestAccount, price: string, suffix: string) {
       const response = await request(app)

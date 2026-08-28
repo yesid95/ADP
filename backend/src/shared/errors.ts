@@ -39,11 +39,19 @@ function fromPrisma(error: Prisma.PrismaClientKnownRequestError): AppError {
 
 export const errorHandler: ErrorRequestHandler = (error, request, response, _next) => {
   let safeError: AppError;
+  const parserType =
+    typeof error === "object" && error !== null && "type" in error
+      ? String((error as { type: unknown }).type)
+      : null;
 
   if (error instanceof AppError) {
     safeError = error;
   } else if (error instanceof ZodError) {
     safeError = new AppError(422, "VALIDATION_ERROR", "Request validation failed", error.issues);
+  } else if (parserType === "entity.too.large") {
+    safeError = new AppError(413, "PAYLOAD_TOO_LARGE", "Request payload is too large");
+  } else if (parserType === "entity.parse.failed") {
+    safeError = new AppError(400, "MALFORMED_BODY", "Request body could not be parsed");
   } else if (error instanceof Prisma.PrismaClientKnownRequestError) {
     safeError = fromPrisma(error);
   } else {

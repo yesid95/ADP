@@ -214,7 +214,10 @@ export async function listOwnListings(
     include: {
       cropVariety: { select: { code: true, name: true } },
       farm: { select: { id: true, name: true } },
-      photos: { orderBy: { sortOrder: "asc" } },
+      photos: {
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, mimeType: true, sizeBytes: true, sortOrder: true, createdAt: true }
+      },
       _count: { select: { bids: true } }
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -248,7 +251,7 @@ export async function getPublicListing(listingId: string) {
       },
       photos: {
         orderBy: { sortOrder: "asc" },
-        select: { id: true, storageKey: true, mimeType: true, sortOrder: true }
+        select: { id: true, mimeType: true, sizeBytes: true, sortOrder: true }
       }
     }
   });
@@ -303,7 +306,7 @@ export async function listPublicListings(filters: PublicListingFilters) {
       },
       photos: {
         orderBy: { sortOrder: "asc" },
-        select: { id: true, storageKey: true, mimeType: true, sortOrder: true }
+        select: { id: true, mimeType: true, sizeBytes: true, sortOrder: true }
       }
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],

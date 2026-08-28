@@ -9,6 +9,7 @@ import { createAuthRouter } from "./modules/auth/auth.routes.js";
 import { createBidRouter } from "./modules/bids/bid.routes.js";
 import { createMarketRouter } from "./modules/market/market.routes.js";
 import { createProfileRouter } from "./modules/profiles/profile.routes.js";
+import { createPhotoRouter } from "./modules/media/photo.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/errors.js";
 
 export function createApp(): Express {
@@ -63,6 +64,7 @@ export function createApp(): Express {
   api.use("/auth", createAuthRouter());
   api.use(createProfileRouter());
   api.use(createMarketRouter());
+  api.use(createPhotoRouter());
   api.use(createBidRouter());
   app.use("/api/v1", api);
 
