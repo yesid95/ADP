@@ -3,8 +3,31 @@ import { getPrisma } from "../infrastructure/database/prisma.js";
 
 const MAX_ATTEMPTS = 3;
 
-function isRetryableTransactionError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034";
+interface DriverConflictCause {
+  kind?: unknown;
+  originalCode?: unknown;
+}
+
+export function isRetryableTransactionError(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+  if (error.code === "P2034") {
+    return true;
+  }
+  if (error.code !== "P2010") {
+    return false;
+  }
+
+  const adapterError = error.meta?.driverAdapterError as
+    | { cause?: DriverConflictCause }
+    | undefined;
+  const cause = adapterError?.cause;
+  return (
+    cause?.kind === "TransactionWriteConflict" ||
+    cause?.originalCode === "1213" ||
+    cause?.originalCode === "1205"
+  );
 }
 
 export async function inSerializableTransaction<T>(
